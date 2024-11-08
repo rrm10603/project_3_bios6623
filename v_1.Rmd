@@ -1,0 +1,123 @@
+---
+title: "project code"
+author: "Rob McNeil and Jessica Chaffee"
+date: "2024-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+Load library, import data set, spit training and testing data
+
+```{r}
+library(caret)
+library(randomForest)
+library(ggplot2)
+
+
+#linux pathway
+adpkd <- read.csv("/home/robmcneil/Desktop/project_3_6623/Project3_data.csv")
+
+str(adpkd)
+
+
+# code to do a 70/30, most likely will go with K fold
+#set.seed(123)
+#randomly split data into 70/30 
+#sample <- sample(c(TRUE, FALSE), nrow(adpkd), replace=TRUE,prob=c(0.7,0.3))
+#training <-adpkd[sample, ]
+#testing <- adpkd[!sample,]
+
+#using k-fold 5 validation 
+
+ctrl <-trainControl(method = "cv",
+                    number = 5,
+                    savePredictions = "final",
+                    summaryFunction = defaultSummary 
+)
+    
+
+
+
+
+
+
+```
+
+
+Data scaling/normalization
+Outlier detection with visualization
+
+data visualization? 
+correlation matrix? 
+
+
+Models for percent changes predictions 
+```{r}
+
+#model using height-corrected total kidney volume
+model_tkv <- train(
+  tkvht_change ~ tkvht_base,    # Formula for the model
+  data = adpkd,               
+  method = "lm",               # Linear model (lm)
+  trControl = ctrl,            # Cross-validation control
+  preProcess = c("center", "scale")  # Preprocessing: center and scale the data
+)
+
+summary(model_tkv)
+
+# Model 2: Using only image features
+#look at feature engineering
+model_image <- train(
+  tkvht_change ~ geom1 + geom2 + #image feature based on kidney geometry information
+    gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + #image feature based on gray level co-occurrence matrix
+    txti1 + txti2 + txti3 + txti4 + txti5 + #image feature based on image textures
+    lbp1 + lbp2 + lbp3 + lbp4 + lbp5, # local binary pattern
+  data =  adpkd,
+  method = "lm",
+  trControl=ctrl, #cross validation control 
+  preProcess = c("center","scale")) #preprossing 
+
+
+# Print the results
+print(model_image)
+
+# attempted to Check performance comparison across models
+#model_image$results
+
+#model 3 (baseline tkvht and image featuring): 
+
+model_both <- train(
+  tkvht_change ~ tkvht_base +
+    gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + #image feature based on gray level co-occurrence matrix
+    txti1 + txti2 + txti3 + txti4 + txti5 + #image feature based on image textures
+    lbp1 + lbp2 + lbp3 + lbp4 + lbp5, # local binary pattern 
+  data = adpkd,
+  method= "lm",
+  trControl = ctrl, #cross validation control
+  preProcess= c("center", "scale")
+    )
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
