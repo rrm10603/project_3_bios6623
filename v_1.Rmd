@@ -21,10 +21,9 @@ library(ggplot2)
 
 
 #linux pathway
-adpkd <- read.csv("/home/robmcneil/Desktop/project_3_6623/Project3_data.csv")
+adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
 
 str(adpkd)
-
 
 # code to do a 70/30, most likely will go with K fold
 #set.seed(123)
@@ -55,7 +54,23 @@ Outlier detection with visualization
 
 data visualization? 
 correlation matrix? 
+```{r}
 
+#check distribution of progression
+
+table(adpkd$progression)
+#binary outcome is evenly distributed 
+
+
+sum(is.na(adpkd$progression))
+#no missing outcomes
+
+#convert progression to factor
+adpkd$progression <-factor(adpkd$progression,levels = c(0,1))
+
+
+
+```
 
 Models for percent changes predictions 
 ```{r}
@@ -112,9 +127,62 @@ model_both <- train(
 
 
 
+Models for prediction of progressoin (binary). Getting warnings of perfect seperation
+
+```{r}
+
+#model using height-corrected total kidney volume
+model_tkv_pro <- train(
+  progression~ tkvht_base,    # Formula for the model
+  data = adpkd,               
+  method = "glm", 
+  family = "binomial",# Linear model (lm)
+  trControl = ctrl,            # Cross-validation control
+  preProcess = c("center", "scale")  # Preprocessing: center and scale the data
+)
+
+summary(model_tkv_pro)
+
+# Model 2: Using only image features
+#look at feature engineering
+model_image_pro <- train(
+  progression~ geom1 + geom2 + #image feature based on kidney geometry information
+    gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + #image feature based on gray level co-occurrence matrix
+    txti1 + txti2 + txti3 + txti4 + txti5 + #image feature based on image textures
+    lbp1 + lbp2 + lbp3 + lbp4 + lbp5, # local binary pattern
+  data =  adpkd,
+  method = "glm",
+  family = "binomial",
+  trControl=ctrl, #cross validation control 
+  preProcess = c("center","scale")) #preprossing 
+
+
+# Print the results
+print(model_image_pro)
+
+# attempted to Check performance comparison across models
+#model_image$results
+
+#model 3 (baseline tkvht and image featuring): 
+
+model_both_pro <- train(
+  progression ~ tkvht_base +
+    gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + #image feature based on gray level co-occurrence matrix
+    txti1 + txti2 + txti3 + txti4 + txti5 + #image feature based on image textures
+    lbp1 + lbp2 + lbp3 + lbp4 + lbp5, # local binary pattern 
+  data = adpkd,
+  method= "glm",
+  family = "binomial",
+  trControl = ctrl, #cross validation control
+  preProcess= c("center", "scale")
+    )
 
 
 
+
+```
 
 
 
