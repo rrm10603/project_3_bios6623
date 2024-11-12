@@ -27,6 +27,9 @@ library(ggcorrplot)
 #linux pathway
 adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
 
+#windows pathway 
+adpkd <-read.csv("C:\Users\rrm10\OneDrive\Desktop\advanced data analysis\Project3_data.csv")
+
 str(adpkd)
 
 # code to do a 70/30, most likely will go with K fold
