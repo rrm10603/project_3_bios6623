@@ -10,7 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+***Note: if we want do run model selection, run cross-validation on training set first,
+then on test set. if no model selection, just run cross-validationw
 
+***note: im thinking based on the size of the dataset, we use cross-validation, its defensible to not perform gradient descent due to risk of overfitting the data 
 
 Load library, import data set, spit training and testing data
 
@@ -76,7 +79,7 @@ Data visualization
 
 #data visualizations reccomendatios from AI
 corr_matrix <- cor(adpkd[, c("tkvht_base", "geom1","geom2", "gabor1", "gabor2","gabor3","gabor4","gabor5","glcm1","glcm2","txti1","txti2","txti3","txti4","txti5","lbp1","lbp2","lbp3","lbp4","lbp5" )], use = "complete.obs")
-ggplot2::ggcorrplot(corr_matrix, method = "circle")
+#ggplot2::ggcorrplot(corr_matrix, method = "circle")
 
 
 #outlierdetection  or scatter plot
