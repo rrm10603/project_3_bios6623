@@ -15,6 +15,8 @@ then on test set. if no model selection, just run cross-validationw
 
 ***note: im thinking based on the size of the dataset, we use cross-validation, its defensible to not perform gradient descent due to risk of overfitting the data 
 
+**random forest models at the bottom of the program that looked at tkvd_change outcome prediction
+
 Load library, import data set, spit training and testing data
 
 ```{r}
@@ -22,13 +24,14 @@ library(caret)
 library(randomForest)
 library(ggplot2)
 library(ggcorrplot)
+library(dplyr)
 
 
 #linux pathway
 adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
 
 #windows pathway 
-adpkd <-read.csv("C:\Users\rrm10\OneDrive\Desktop\advanced data analysis\Project3_data.csv")
+#adpkd <-read.csv("C:\Users\rrm10\OneDrive\Desktop\advanced data analysis\Project3_data.csv")
 
 str(adpkd)
 
@@ -80,7 +83,7 @@ Data visualization
 
 ```{r}
 
-#data visualizations reccomendatios from AI
+#data visualizations recommendations from AI
 corr_matrix <- cor(adpkd[, c("tkvht_base", "geom1","geom2", "gabor1", "gabor2","gabor3","gabor4","gabor5","glcm1","glcm2","txti1","txti2","txti3","txti4","txti5","lbp1","lbp2","lbp3","lbp4","lbp5" )], use = "complete.obs")
 #ggplot2::ggcorrplot(corr_matrix, method = "circle")
 
@@ -96,6 +99,31 @@ ggplot(adpkd, aes(x = tkvht_base, y=tkvht_change)) +
 ggplot(adpkd, aes(x = tkvht_base, y = tkvht_change, color = progression)) + 
   geom_point() + 
   geom_smooth(method = "lm")
+
+#outliers::
+# Fit a model to check for influential points
+model <- lm(tkvht_change ~ tkvht_base, data = adpkd)
+cooksd <- cooks.distance(model)
+
+# Plot Cook's Distance
+ggplot(data = NULL, aes(x = 1:length(cooksd), y = cooksd)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 4/(length(cooksd) - length(model$coefficients) - 1), 
+             linetype = "dashed", color = "red") +
+  labs(title = "Cook's Distance Plot") +
+  theme_minimal()
+
+
+# Get standardized residuals
+standardized_resid <- rstandard(model)
+
+# Plot standardized residuals
+ggplot(data = NULL, aes(x = 1:length(standardized_resid), y = standardized_resid)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = c(-2, 2), linetype = "dashed", color = "red") +
+  labs(title = "Standardized Residuals") +
+  theme_minimal()
+
 ```
 
 
@@ -110,9 +138,35 @@ model_tkv <- train(
   method = "lm",               # Linear model (lm)
   trControl = ctrl,            # Cross-validation control
   preProcess = c("center", "scale")  # Preprocessing: center and scale the data
+  
 )
 
 summary(model_tkv)
+
+#extract residuals
+
+model_tkv_fitted<- predict(model_tkv)
+model_tkv_resid <-  resid(model_tkv)
+
+
+
+# check assumptions of linear regression on this model
+
+#plot residuals
+ggplot(data= NULL, aes(x=model_tkv_fitted,y=model_tkv_resid)) +
+  geom_point()+
+  geom_hline(yintercept = 0, linetype="dashed", color = "red")+
+  labs(title = "figure: tkv change lm residuals vs fitted",
+       x = "fitted values",
+       y= "residual values")+
+  theme_minimal()
+
+#qqplot to check normality
+qqnorm(model_tkv_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqline(model_tkv_resid, col= "red")
+
+
+#############
 
 # Model 2: Using only image features
 #look at feature engineering
@@ -142,11 +196,11 @@ ggplot(data= NULL, aes(x=model_image_fitted,y=model_image_resid)) +
        y= "residual values")+
   theme_minimal()
 
-#qqplot to check normality 
+#qqplot to check normality
 qqnorm(model_image_resid, main = "Q-Q Plot of Residuals for model imaging lm")
 qqline(model_image_resid, col= "red")
 
-
+#appears as though normality could be violated, this could be due to outliers
 
 
 
@@ -170,6 +224,60 @@ model_both <- train(
   preProcess= c("center", "scale")
     )
 
+####check assumptions 
+
+model_both_fitted<- predict(model_both)
+model_both_resid <-  resid(model_both)
+
+#plot residuals
+ggplot(data= NULL, aes(x=model_both_fitted,y=model_both_resid)) +
+  geom_point()+
+  geom_hline(yintercept = 0, linetype="dashed", color = "red")+
+  labs(title = "figure: tkv change lm residuals vs fitted",
+       x = "fitted values",
+       y= "residual values")+
+  theme_minimal()
+
+#qqplot to check normality
+qqnorm(model_tkv_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqline(model_tkv_resid, col= "red")
+
+
+
+
+
+```
+
+
+```{r}
+
+#outliers::
+# Fit a model to check for influential points
+model <- lm(tkvht_change ~ tkvht_base, data = adpkd)
+cooksd <- cooks.distance(model)
+
+# Plot Cook's Distance
+ggplot(data = NULL, aes(x = 1:length(cooksd), y = cooksd)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 4/(length(cooksd) - length(model$coefficients) - 1), 
+             linetype = "dashed", color = "red") +
+  labs(title = "Cook's Distance Plot") +
+  theme_minimal()
+
+
+# Get standardized residuals
+standardized_resid <- rstandard(model)
+
+# Plot standardized residuals
+ggplot(data = NULL, aes(x = 1:length(standardized_resid), y = standardized_resid)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = c(-2, 2), linetype = "dashed", color = "red") +
+  labs(title = "Standardized Residuals") +
+  theme_minimal()
+
+
+
+
 
 
 
@@ -181,7 +289,7 @@ model seletion/ comparion of tvk prediction
 #initial code from AI reccomendation, using resamples
 
 # Compare models on RSME, R-squared
-resamples_list <- resamples(list(model_tkv=model_tkv, model_image=model_image))
+resamples_list <- resamples(list(model_tkv=model_tkv, model_image=model_image,model_both=model_both))
 summary(resamples_list)
 
 
@@ -248,8 +356,126 @@ model_both_pro <- train(
 
 ```
 
+random forest models: 
+
+```{r}
+
+tune_grid <- expand.grid(
+  mtry = 1
+)
+
+model_tkv_rf <- train(
+  tkvht_change ~ tkvht_base,    # Formula for the model
+  data = adpkd,               
+  method = "rf",               # Random Forest method
+  trControl = ctrl,            # Cross-validation control
+  preProcess = c("center", "scale"),  # Preprocessing: center and scale the data
+  tuneGrid = tune_grid         # Specify hyperparameter grid
+)
 
 
 
+
+# Adjusting tune_grid for Random Forest (model_image)
+tune_grid_image <- expand.grid(
+  mtry = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)  # Range for number of predictors (image features)
+)
+
+# Fit Random Forest model on image features only
+model_image_rf <- train(
+  tkvht_change ~ geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + 
+    lbp1 + lbp2 + lbp3 + lbp4 + lbp5,  # Formula with image features
+  data = adpkd,
+  method = "rf",               # Random Forest method
+  trControl = ctrl,            # Cross-validation control
+  preProcess = c("center", "scale"),  # Preprocessing: center and scale the data
+  tuneGrid = tune_grid_image,  # Tuning mtry
+  tuneLength = 5               # Number of tuning steps (can adjust if needed)
+)
+
+# Print model results for image features RF model
+print(model_image_rf)
+
+
+# Adjusting tune_grid for Random Forest (model_both)
+tune_grid_both <- expand.grid(
+  mtry = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)  # Range for number of predictors (tkvht_base + image features)
+)
+
+# Fit Random Forest model on both baseline tkvht_base and image features
+model_both_rf <- train(
+  tkvht_change ~ tkvht_base + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + 
+    lbp1 + lbp2 + lbp3 + lbp4 + lbp5,  # Formula with both tkvht_base and image features
+  data = adpkd,
+  method = "rf",               # Random Forest method
+  trControl = ctrl,            # Cross-validation control
+  preProcess = c("center", "scale"),  # Preprocessing: center and scale the data
+  tuneGrid = tune_grid_both,   # Tuning mtry
+  tuneLength = 5               # Number of tuning steps (can adjust if needed)
+)
+
+# Print model results for both predictors RF model
+print(model_both_rf)
+
+#extract residuals
+
+model_tkvrf_fitted<- predict(model_tkv_rf)
+model_tkvrf_resid <-  resid(model_tkv_rf)
+
+
+
+# check assumptions of linear regression on this model
+
+#plot residuals
+ggplot(data= NULL, aes(x=model_tkvrf_fitted,y=model_tkvrf_resid)) +
+  geom_point()+
+  geom_hline(yintercept = 0, linetype="dashed", color = "red")+
+  labs(title = "figure: tkv change lm residuals vs fitted",
+       x = "fitted values",
+       y= "residual values")+
+  theme_minimal()
+
+#qqplot to check normality
+qqnorm(model_tkvrf_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqline(model_tkvrf_resid, col= "red")
+
+resamples_list <- resamples(list(model_tkv=model_tkv, model_image=model_image,model_both=model_both))
+summary(resamples_list)
+
+resamples_rflist <-resamples(list(model_tkv_rf=model_tkv_rf,
+                                  model_image_rf=model_image_rf,
+                                  model_both_rf=model_both_rf))
+summary(resamples_rflist)
+
+
+
+
+# For model_both_rf
+importance(model_both_rf$finalModel)
+
+# Plot feature importance
+varImp(model_both_rf)
+
+
+# Plot the feature importance for visualization
+
+importance_df <- data.frame(Feature = rownames(importance(model_both_rf$finalModel)),
+                            Importance = importance(model_both_rf$finalModel)[, 1])
+
+ggplot(importance_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Random Forest Feature Importance",
+       x = "Feature",
+       y = "Importance") 
+
+
+
+#after running importance scores this, consider removing features, run a model with base and gabor 4
+
+```
 
 
