@@ -1,0 +1,224 @@
+---
+title: "project code"
+author: "Rob McNeil and Jessica Chaffee"
+date: "2024-11-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load library, import data set
+
+```{r, echo=FALSE}
+library(caret)
+library(randomForest)
+library(ggplot2)
+library(ggcorrplot)
+library(dplyr)
+library(glmnet)
+library(elasticnet)
+
+
+#linux pathway
+adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
+#adpkd <- read.csv("~/Downloads/Project3_data.csv")
+#windows pathway 
+#adpkd <-read.csv("C:\Users\rrm10\OneDrive\Desktop\advanced data analysis\Project3_data.csv")
+
+
+```
+
+```{r}
+#summary of missing data (Found no missing data)
+colSums(is.na(adpkd))
+```
+
+```{r}
+# Visualize data via histograms of numeric variables
+numeric_columns <- sapply(adpkd, is.numeric)
+
+for (col in names(adpkd)[numeric_columns]) {
+  hist(adpkd[[col]], main = paste("Histogram of", col), xlab = col)
+}
+```
+
+```{r}
+#shapiro wilkd test for normality(not great)
+shapiro_results <- lapply(adpkd[, numeric_columns], shapiro.test)
+
+shapiro_results
+```
+
+```{r}
+# Get correlation matrix
+numeric_columns <- sapply(adpkd, is.numeric)
+cor_matrix <- cor(adpkd[, numeric_columns])   
+
+#visualize correlation matrix
+print(cor_matrix)
+
+```
+
+
+```{r}
+# Get highly correlated features
+high_correlations <- which(abs(cor_matrix) > 0.8, arr.ind = TRUE)
+
+high_correlations_pairs <- data.frame(
+  Column1 = rownames(cor_matrix)[high_correlations[, 1]],
+  Column2 = colnames(cor_matrix)[high_correlations[, 2]],
+  Correlation = cor_matrix[high_correlations]
+)
+
+# Print the result
+high_correlations_pairs
+
+#Finds that lbp4-lbp3, and lbp4-lbp1, are the only feature pairs with a correlation greater than 0.8
+
+```
+
+
+```{r}
+# Address multicolinearity
+# ibp4 is highly correlated with both lbp1 and lbp3, lbp4 is also the least correlated with our outcome variables so that is the feature we will delete to address the multicolinearity 
+
+adpkd_no_multico <- adpkd[, -which(names(adpkd)== "lbp4")]
+head(adpkd_no_multico)
+
+#adpkd_no_multico is the dataset without lbp4 to address issues with multicolinearity
+```
+
+
+```{r}
+# box plots of independent variables 
+vars_to_transform <- setdiff(names(adpkd_no_multico), c("Subject.ID", "tkvht_visit2","progression","tkvht_change"))
+x_variables <- adpkd_no_multico[, vars_to_transform]
+
+for (col in names(x_variables)) {
+  boxplot(x_variables[[col]], main = paste("Boxplot of", col), ylab = col)
+}
+
+# While the box plots do show that we have outliers we do not have any evidence that these outliers are an error, for now we will leave them in until we decide on the features that we are keeping and then we will revisit how to address them (possibly z-score 3 std's away)
+```
+
+
+```{r}
+# Because the values are not normally distributed we decided to use normalization over standardization 
+
+#normalizing x values to put them on a similar scale for analysis 
+adpkd_x_vars_normalized <- as.data.frame(lapply(x_variables, function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}))
+
+head(adpkd_x_vars_normalized)
+
+#normalized to a range between 0 and 1
+```
+
+
+Task 1: For part 2 and part 3 we should do a linear regression, a ridge regression and a lasso regression so that we can compare them and decide on which linear model works best, then we can choose the model that gives us the best AIC and lowest mse as our final model for that part 
+
+```{r}
+y_variables <- adpkd_no_multico[, c("Subject.ID", "tkvht_visit2","progression","tkvht_change")]
+y_variables
+```
+
+```{r,echo=FALSE}
+combined_normalized <- cbind(adpkd_x_vars_normalized, y_variables)
+combined_normalized
+
+
+# code to do a 70/30 split on combined normalized
+set.seed(123)
+#randomly split data into 70/30 
+sample <- sample(c(TRUE, FALSE), nrow(combined_normalized), replace=TRUE,prob=c(0.7,0.3))
+training <-combined_normalized[sample, ]
+testing <- combined_normalized[!sample,]
+
+```
+
+```{r,echo=FALSE}
+#train linear models
+
+#linear model using tkvht_base as only predictor
+model_tkv_lm <- lm(tkvht_change ~tkvht_base, data=training)
+summary(model_tkv_lm)
+
+#linear model using image featuring as predictors
+
+#linear model: 
+
+model_image_lm <- lm(tkvht_change ~ geom1 + geom2 + #image feature based on kidney geometry information
+    gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + 
+    glcm1 + glcm2 + #image feature based on gray level co-occurrence matrix
+    txti1 + txti2 + txti3 + txti4 + txti5 + #image feature based on image textures
+    lbp1 + lbp2 + lbp3 + lbp5, # local binary pattern)
+    data = training)
+
+
+model_both_lm <- lm(tkvht_change ~ tkvht_base + geom1 + geom2 +  gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 +  lbp1 + lbp2 + lbp3 + lbp5,  data = training)
+
+#extract residuals for 
+
+model_tkv_fitted<- predict(model_tkv_lm)
+model_tkv_resid <-  resid(model_tkv_lm)
+
+model_image_fitted<- predict(model_image_lm)
+model_image_resid <-  resid(model_image_lm)
+
+model_both_fitted<- predict(model_both_lm)
+model_both_resid <-  resid(model_both_lm)
+
+
+
+# check assumptions of linear regression on this model
+#outliers appear to skew equal variance, normality, and linearity
+
+#plot residuals
+ggplot(data= NULL, aes(x=model_tkv_fitted,y=model_tkv_resid)) +
+  geom_point()+
+  geom_hline(yintercept = 0, linetype="dashed", color = "red")+
+  labs(title = "figure: tkv change lm residuals vs fitted",
+       x = "fitted values",
+       y= "residual values")+
+  theme_minimal()
+
+#qqplot to check normality
+qqnorm(model_tkv_resid, main = "Q-Q Plot of Residuals for tkv base lm")
+qqline(model_tkv_resid, col= "red")
+
+
+#plot residuals of lm image featuring 
+ggplot(data= NULL, aes(x=model_image_fitted,y=model_image_resid)) +
+  geom_point()+
+  geom_hline(yintercept = 0, linetype="dashed", color = "red")+
+  labs(title = "figure: model imaging lm residuals vs fitted",
+       x = "fitted values",
+       y= "residual values")+
+  theme_minimal()
+
+#qqplot to check normality
+qqnorm(model_image_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqline(model_image_resid, col= "red")
+
+#appears as though normality could be violated, this could be due to outliers
+
+#plot residuals
+ggplot(data= NULL, aes(x=model_both_fitted,y=model_both_resid)) +
+  geom_point()+
+  geom_hline(yintercept = 0, linetype="dashed", color = "red")+
+  labs(title = "figure: tkv change lm residuals vs fitted",
+       x = "fitted values",
+       y= "residual values")+
+  theme_minimal()
+
+#qqplot to check normality
+qqnorm(model_tkv_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqline(model_tkv_resid, col= "red")
+
+```
+
+
+
