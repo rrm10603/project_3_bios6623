@@ -46,53 +46,10 @@ for (col in names(adpkd)[numeric_columns]) {
   hist(adpkd[[col]], main = paste("Histogram of", col), xlab = col)
 }
 ```
-```{r}
-
-#code for table 1 
-demographic_summary <- gum %>% #Use gum dataset to see summary table for all 130 participants, use gum2 data set for the summary statistics of just the participants in the final analysis
-  group_by(trtgroup) %>%
-  summarise(
-    `Male (%)` = as.character(round(sum(gender == 1, na.rm = TRUE) / n() * 100, 2)),
-    `Female (%)` = as.character(round(sum(gender == 2, na.rm = TRUE) / n() * 100, 2)),
-    `Native American (%)` = as.character(round(sum(race == 1, na.rm = TRUE) / n() * 100, 2)),
-    `African American (%)` = as.character(round(sum(race == 2, na.rm = TRUE) / n() * 100, 2)),
-    `Asian (%)` = as.character(round(sum(race == 4, na.rm = TRUE) / n() * 100, 2)),
-    `White (%)` = as.character(round(sum(race == 5, na.rm = TRUE) / n() * 100, 2)),
-    `Age (Mean(SD))` = as.character(paste0(round(mean(age, na.rm = TRUE), 2), " (", round(sd(age, na.rm = TRUE), 2), ")")),
-    `Smoker (%)` = as.character(round(sum(smoker == 1, na.rm = TRUE) / n() * 100, 2)),
-    `Initial Attachment Loss (Mean(SD))` = as.character(paste0(round(mean(attachbase, na.rm = TRUE), 2), " (", round(sd(attachbase, na.rm = TRUE), 2), ")")),
-    `Initial Pocket Depth (Mean(SD))` = as.character(paste0(round(mean(pdbase, na.rm = TRUE), 2), " (", round(sd(pdbase, na.rm = TRUE), 2), ")")),
-    `Attachment Loss After 1 Year (Mean(SD))` = as.character(paste0(round(mean(attach1year, na.rm = TRUE), 2), " (", round(sd(attach1year, na.rm = TRUE), 2), ")")),
-    `Pocket Depth After 1 Year (Mean(SD))` = as.character(paste0(round(mean(pd1year, na.rm = TRUE), 2), " (", round(sd(pd1year, na.rm = TRUE), 2), ")"))
-  ) %>%
-  ungroup() %>%
-  mutate(trtgroup = case_when(
-    trtgroup == 1 ~ "Placebo (group 1)",
-    trtgroup == 2 ~ "No Treatment (group 2)",
-    trtgroup == 3 ~ "Low Concentration (group 3)",
-    trtgroup == 4 ~ "Medium Concentration (group 4)",
-    trtgroup == 5 ~ "High Concentration (group 5)"
-  )) %>%
-  pivot_longer(cols = -trtgroup, names_to = "Demographic", values_to = "Value") %>%
-  pivot_wider(names_from = trtgroup, values_from = Value)
-
-# Print the summary table
-kable(demographic_summary, caption = "Table 1: Demographic and Other Characteristic Information by Treatment Group")
-
-```
 
 
 ```{r}
-# Print the summary table 1 with lines between rows
-kable(demographic_summary, caption = "Table 1: Demographic and Other Characteristic Information by Treatment Group") %>%
-  kable_styling() %>%
-  row_spec(0, bold = TRUE) %>% # Bold the header
-  row_spec(1:nrow(demographic_summary), extra_css = "border-top: 1px solid black; border-bottom: 1px solid black;")
-
-```
-
-```{r}
-# Create table 1 (features stratified by progression)
+# Create table 1 
 
 summary_table <- adpkd %>%
   summarise(
