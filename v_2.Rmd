@@ -16,14 +16,16 @@ library(caret)
 library(randomForest)
 library(ggplot2)
 library(ggcorrplot)
+library(knitr)
 library(dplyr)
+library(tidyr)             
 library(glmnet)
+library(kableExtra)
 library(elasticnet)
 
-
 #linux pathway
-adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
-#adpkd <- read.csv("~/Downloads/Project3_data.csv")
+#adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
+adpkd <- read.csv("~/Downloads/Project3_data.csv")
 #windows pathway 
 #adpkd <-read.csv("C:\Users\rrm10\OneDrive\Desktop\advanced data analysis\Project3_data.csv")
 
@@ -43,6 +45,88 @@ for (col in names(adpkd)[numeric_columns]) {
   hist(adpkd[[col]], main = paste("Histogram of", col), xlab = col)
 }
 ```
+```{r}
+
+#code for table 1 
+demographic_summary <- gum %>% #Use gum dataset to see summary table for all 130 participants, use gum2 data set for the summary statistics of just the participants in the final analysis
+  group_by(trtgroup) %>%
+  summarise(
+    `Male (%)` = as.character(round(sum(gender == 1, na.rm = TRUE) / n() * 100, 2)),
+    `Female (%)` = as.character(round(sum(gender == 2, na.rm = TRUE) / n() * 100, 2)),
+    `Native American (%)` = as.character(round(sum(race == 1, na.rm = TRUE) / n() * 100, 2)),
+    `African American (%)` = as.character(round(sum(race == 2, na.rm = TRUE) / n() * 100, 2)),
+    `Asian (%)` = as.character(round(sum(race == 4, na.rm = TRUE) / n() * 100, 2)),
+    `White (%)` = as.character(round(sum(race == 5, na.rm = TRUE) / n() * 100, 2)),
+    `Age (Mean(SD))` = as.character(paste0(round(mean(age, na.rm = TRUE), 2), " (", round(sd(age, na.rm = TRUE), 2), ")")),
+    `Smoker (%)` = as.character(round(sum(smoker == 1, na.rm = TRUE) / n() * 100, 2)),
+    `Initial Attachment Loss (Mean(SD))` = as.character(paste0(round(mean(attachbase, na.rm = TRUE), 2), " (", round(sd(attachbase, na.rm = TRUE), 2), ")")),
+    `Initial Pocket Depth (Mean(SD))` = as.character(paste0(round(mean(pdbase, na.rm = TRUE), 2), " (", round(sd(pdbase, na.rm = TRUE), 2), ")")),
+    `Attachment Loss After 1 Year (Mean(SD))` = as.character(paste0(round(mean(attach1year, na.rm = TRUE), 2), " (", round(sd(attach1year, na.rm = TRUE), 2), ")")),
+    `Pocket Depth After 1 Year (Mean(SD))` = as.character(paste0(round(mean(pd1year, na.rm = TRUE), 2), " (", round(sd(pd1year, na.rm = TRUE), 2), ")"))
+  ) %>%
+  ungroup() %>%
+  mutate(trtgroup = case_when(
+    trtgroup == 1 ~ "Placebo (group 1)",
+    trtgroup == 2 ~ "No Treatment (group 2)",
+    trtgroup == 3 ~ "Low Concentration (group 3)",
+    trtgroup == 4 ~ "Medium Concentration (group 4)",
+    trtgroup == 5 ~ "High Concentration (group 5)"
+  )) %>%
+  pivot_longer(cols = -trtgroup, names_to = "Demographic", values_to = "Value") %>%
+  pivot_wider(names_from = trtgroup, values_from = Value)
+
+# Print the summary table
+kable(demographic_summary, caption = "Table 1: Demographic and Other Characteristic Information by Treatment Group")
+
+```
+
+
+```{r}
+# Print the summary table 1 with lines between rows
+kable(demographic_summary, caption = "Table 1: Demographic and Other Characteristic Information by Treatment Group") %>%
+  kable_styling() %>%
+  row_spec(0, bold = TRUE) %>% # Bold the header
+  row_spec(1:nrow(demographic_summary), extra_css = "border-top: 1px solid black; border-bottom: 1px solid black;")
+
+```
+
+```{r}
+# Create table 1 (features stratified by progression)
+
+summary_table <- adpkd %>%
+  summarise(
+    'Geometry Feature 1 (Mean(SD))' = as.character(paste0(formatC(mean(geom1, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(geom1, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Geometry Feature 2 (Mean(SD))' = as.character(paste0(formatC(mean(geom2, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(geom2, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gabor Transformation 1 (Mean(SD))' = as.character(paste0(formatC(mean(gabor1, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(gabor1, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gabor Transformation 2 (Mean(SD))' = as.character(paste0(formatC(mean(gabor2, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(gabor2, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gabor Transformation 3 (Mean(SD))' = as.character(paste0(formatC(mean(gabor3, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(gabor3, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gabor Transformation 4 (Mean(SD))' = as.character(paste0(formatC(mean(gabor4, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(gabor4, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gabor Transformation 5 (Mean(SD))' = as.character(paste0(formatC(mean(gabor5, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(gabor5, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gray Level Co-Occurrence Matrix 1 (Mean(SD))' = as.character(paste0(formatC(mean(glcm1, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(glcm1, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Gray Level Co-Occurrence Matrix 2 (Mean(SD))' = as.character(paste0(formatC(mean(glcm2, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(glcm2, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Image Textures 1 (Mean(SD))' = as.character(paste0(formatC(mean(txti1, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(txti1, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Image Textures 2 (Mean(SD))' = as.character(paste0(formatC(mean(txti2, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(txti2, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Image Textures 3 (Mean(SD))' = as.character(paste0(formatC(mean(txti3, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(txti3, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Image Textures 4 (Mean(SD))' = as.character(paste0(formatC(mean(txti4, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(txti4, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Image Textures 5 (Mean(SD))' = as.character(paste0(formatC(mean(txti5, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(txti5, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Local Binary Pattern 1 (Mean(SD))' = as.character(paste0(formatC(mean(lbp1, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(lbp1, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Local Binary Pattern 2 (Mean(SD))' = as.character(paste0(formatC(mean(lbp2, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(lbp2, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Local Binary Pattern 3 (Mean(SD))' = as.character(paste0(formatC(mean(lbp3, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(lbp3, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Local Binary Pattern 4 (Mean(SD))' = as.character(paste0(formatC(mean(lbp4, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(lbp4, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Local Binary Pattern 5 (Mean(SD))' = as.character(paste0(formatC(mean(lbp5, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(lbp5, na.rm = TRUE), format = "e", digits = 2), ")")),
+    'Baseline Hight-Corrected Total Kidney Volume (Mean(SD))' = as.character(paste0(formatC(mean(tkvht_base, na.rm = TRUE), format = "e", digits = 2), " (", formatC(sd(tkvht_base, na.rm = TRUE), format = "e", digits = 2), ")")),
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "Characteristic", values_to = "Value") 
+    
+
+# Print the table
+kable(summary_table, caption = "Table 1: Baseline Characteristics of Study Participants") %>%
+  kable_styling() %>%
+  row_spec(0, bold = TRUE) %>% # Bold the header
+  row_spec(1:nrow(summary_table), extra_css = "border-top: 1px solid black; border-bottom: 1px solid black;")
+
+```
+
 
 ```{r}
 #shapiro wilkd test for normality(not great)
