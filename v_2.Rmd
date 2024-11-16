@@ -19,6 +19,7 @@ library(ggcorrplot)
 library(dplyr)
 library(glmnet)
 library(elasticnet)
+library(knitr)
 
 
 #linux pathway
@@ -283,7 +284,104 @@ ridge_both$beta
 
 ```
 
+```{r}
 
+# Model selection
+
+# AIC for all models (including the two additional Linear models)
+aic_tkv_lm <- AIC(model_tkv_lm)   # Linear (TKV Base)
+aic_image_lm <- AIC(model_image_lm) # Linear (Image)
+aic_both_lm <- AIC(model_both_lm)   # Linear (Both)
+
+# MSE for all models (on Training Data)
+# Predict and calculate MSE for Linear Models
+lm_image_pred <- predict(model_image_lm, newdata = training)  # Linear (Image)
+mse_lm_image <- mean((training$tkvht_change - lm_image_pred)^2)
+
+# MSE for Linear (TKV Base)
+lm_tkv_pred <- predict(model_tkv_lm, newdata = training)  # Linear (TKV Base)
+mse_lm_tkv <- mean((training$tkvht_change - lm_tkv_pred)^2)
+
+# MSE for Linear (Both)
+lm_both_pred <- predict(model_both_lm, newdata = training)  # Linear (Both)
+mse_lm_both <- mean((training$tkvht_change - lm_both_pred)^2)
+
+# Lasso Model - Image
+lasso_image_pred <- predict(lasso_image, s = 0.1, newx = X_image)
+mse_lasso_image <- mean((training$tkvht_change - lasso_image_pred)^2)
+
+# Ridge Model - Image
+ridge_image_pred <- predict(ridge_image, s = 0.1, newx = X_image)
+mse_ridge_image <- mean((training$tkvht_change - ridge_image_pred)^2)
+
+# Lasso Model - Both
+lasso_both_pred <- predict(lasso_both, s = 0.1, newx = X_both)
+mse_lasso_both <- mean((training$tkvht_change - lasso_both_pred)^2)
+
+# Ridge Model - Both
+ridge_both_pred <- predict(ridge_both, s = 0.1, newx = X_both)
+mse_ridge_both <- mean((training$tkvht_change - ridge_both_pred)^2)
+
+
+# RMSE Calculation (Square root of MSE)
+rmse_lm_tkv <- sqrt(mse_lm_tkv)
+rmse_lm_image <- sqrt(mse_lm_image)
+rmse_lm_both <- sqrt(mse_lm_both)
+
+rmse_lasso_image <- sqrt(mse_lasso_image)
+rmse_ridge_image <- sqrt(mse_ridge_image)
+rmse_lasso_both <- sqrt(mse_lasso_both)
+rmse_ridge_both <- sqrt(mse_ridge_both)
+
+# Store AIC, MSE, and RMSE results in a data frame
+results <- data.frame(
+  Model = c("Linear (TKV Base)", "Linear (Image)", "Linear (Both)", 
+            "Lasso (Image)", "Ridge (Image)", "Lasso (Both)", "Ridge (Both)"),
+  AIC = c(aic_tkv_lm, aic_image_lm, aic_both_lm, NA, NA, NA, NA),
+  MSE = c(mse_lm_tkv, mse_lm_image, mse_lm_both, 
+          mse_lasso_image, mse_ridge_image, mse_lasso_both, mse_ridge_both),
+  RMSE = c(rmse_lm_tkv, rmse_lm_image, rmse_lm_both, 
+           rmse_lasso_image, rmse_ridge_image, rmse_lasso_both, rmse_ridge_both)
+)
+
+
+kable(results, caption = "Model Comparison: AIC, MSE, and RMSE", digits = 4)
+
+
+```
+
+Testing Final selection :
+
+```{r,echo=FALSE}
+
+# Prepare the testing data (convert to matrix, same features used for training)
+X_test <- as.matrix(testing[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+
+# Use the Ridge (Both) model to make predictions on the testing data
+ridge_both_pred_test <- predict(ridge_both, s = 0.1, newx = X_test)
+
+# Calculate MSE (Mean Squared Error) for Ridge (Both) on the testing data
+mse_ridge_both_test <- mean((testing$tkvht_change - ridge_both_pred_test)^2)
+
+# Calculate RMSE (Root Mean Squared Error)
+rmse_ridge_both_test <- sqrt(mse_ridge_both_test)
+
+# Output the results
+cat("Final Evaluation Metrics for Ridge (Both) Model on Testing Data:\n")
+cat("MSE (Mean Squared Error): ", round(mse_ridge_both_test, 4), "\n")
+cat("RMSE (Root Mean Squared Error): ", round(rmse_ridge_both_test, 4), "\n")
+
+
+# Create a data frame for the final evaluation metrics
+final_metrics <- data.frame(
+  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
+  Value = c(round(mse_ridge_both_test, 4), round(rmse_ridge_both_test, 4))
+)
+
+kable(final_metrics, caption = "Final Evaluation Metrics for Ridge (Both) Model on Testing Data", digits = 4)
+
+```
 
 
 Logistic regression
