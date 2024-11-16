@@ -220,5 +220,116 @@ qqline(model_tkv_resid, col= "red")
 
 ```
 
+Method 2: Lasso
+
+```{r, echo=FALSE}
+
+# for imaging
+X_image <- as.matrix(training[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_image <- training$tkvht_change  # Response variable
+
+# Fit Lasso model with a specific lambda
+lasso_image <- glmnet(X_image, y_image, alpha = 1, lambda = 0.1)  # Use lambda=0.1 as an example
+
+# Get the coefficients
+lasso_image$beta
+
+#for both: 
+
+# Prepare the data
+X_both <- as.matrix(training[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_both <- training$tkvht_change  # Response variable
+
+# Fit Lasso model with a specific lambda
+lasso_both <- glmnet(X_both, y_both, alpha = 1, lambda = 0.1)  # Use lambda=0.1 as an example
+
+# Get the coefficients
+lasso_both$beta
+
+```
 
 
+Ridge
+
+
+```{r, echo=FALSE}
+
+
+# Prepare the data for Ridge regression for image featuring
+X_image <- as.matrix(training[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_image <- training$tkvht_change  # Response variable
+
+# Fit Ridge model (alpha = 0 for Ridge)
+ridge_image <- glmnet(X_image, y_image, alpha = 0, lambda = 0.1)  # You can choose an appropriate lambda value
+
+# View the coefficients
+ridge_image$beta
+
+
+# Prepare the data for Ridge regression 
+X_both <- as.matrix(training[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_both <- training$tkvht_change  # Response variable
+
+# Fit Ridge model (alpha = 0 for Ridge)
+ridge_both <- glmnet(X_both, y_both, alpha = 0, lambda = 0.1)  # You can choose an appropriate lambda value
+
+# View the coefficients
+ridge_both$beta
+
+
+```
+
+
+
+
+Logistic regression
+
+
+```{r, echo=FALSE}
+
+#fit logistic regression model
+
+tkvht_base_glm <- glm(progression ~ tkvht_base, family = "binomial", data = training)
+
+summary(tkvht_base_glm)
+
+model_imaging_log <- glm(progression ~ geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + lbp1 + lbp2 + lbp3 + lbp5, data = training )
+
+summary(model_imaging_log)
+
+model_imaging_log <- glm(progression ~ tkvht_base +geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + lbp1 + lbp2 + lbp3 + lbp5, data = training )
+
+
+```
+
+
+Lasso and ridge
+
+```{r, echo=FALSE}
+
+# Prepare the data for logistic regression with Lasso regularization (L1)
+X_lasso <- as.matrix(training[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_lasso <- training$progression  # Binary outcome variable
+
+# Fit Lasso logistic regression (alpha = 1 for Lasso)
+lasso_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 1, lambda = 0.1)  # Choose a lambda value
+
+# View the coefficients
+lasso_logit$beta
+
+
+
+# Fit Ridge logistic regression (alpha = 0 for Ridge) L2 Regularization
+ridge_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 0, lambda = 0.1)  # Choose a lambda value
+
+# View the coefficients
+ridge_logit$beta
+
+
+
+```
