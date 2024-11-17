@@ -23,12 +23,13 @@ library(glmnet)
 library(kableExtra)
 library(elasticnet)
 library(knitr)
+library(pROC)
 
 #linux pathway
 #adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
-adpkd <- read.csv("~/Downloads/Project3_data.csv")
+#adpkd <- read.csv("~/Downloads/Project3_data.csv")
 #windows pathway 
-#adpkd <-read.csv("C:\Users\rrm10\OneDrive\Desktop\advanced data analysis\Project3_data.csv")
+adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
 
 
 ```
@@ -273,6 +274,9 @@ y_image <- training$tkvht_change  # Response variable
 
 # Fit Lasso model with a specific lambda
 lasso_image <- glmnet(X_image, y_image, alpha = 1, lambda = 0.1)  # Use lambda=0.1 as an example
+lasso_image<- cv.glmnet(X_image,y_image,alpha=1)
+best_lasso_lambda<-lasso_image$lambda.min
+#returns 1.43536
 
 # Get the coefficients
 lasso_image$beta
@@ -287,6 +291,9 @@ y_both <- training$tkvht_change  # Response variable
 # Fit Lasso model with a specific lambda
 lasso_both <- glmnet(X_both, y_both, alpha = 1, lambda = 0.1)  # Use lambda=0.1 as an example
 
+lasso_both_lambda <- cv.glmnet(X_both,y_both,alpha=1)
+best_both_lambda <- lasso_both_lambda$lambda.min
+best_both_lambda #returns 2.508332but increases RMSE
 # Get the coefficients
 lasso_both$beta
 
@@ -307,6 +314,11 @@ y_image <- training$tkvht_change  # Response variable
 # Fit Ridge model (alpha = 0 for Ridge)
 ridge_image <- glmnet(X_image, y_image, alpha = 0, lambda = 0.1)  # You can choose an appropriate lambda value
 
+ridge_image_lambda <- cv.glmnet(X_image,y_image, alpha=0)
+best_lambda_image <-ridge_image_lamba$lambda.min
+best_lambda_image
+#returns best lambda value of 2285.499 but this will increase RMSE- underfits?
+
 # View the coefficients
 ridge_image$beta
 
@@ -318,6 +330,11 @@ y_both <- training$tkvht_change  # Response variable
 
 # Fit Ridge model (alpha = 0 for Ridge)
 ridge_both <- glmnet(X_both, y_both, alpha = 0, lambda = 0.1)  # You can choose an appropriate lambda value
+
+ridge_both_lambda <-cv.glmnet(X_both, y_both, alpha=0)
+#best_lambda_both <-ridge_both_lambda$lambda.min
+#best_lambda_both 
+#returns 2508.332 but this increases RMSE- underfits?
 
 # View the coefficients
 ridge_both$beta
@@ -422,6 +439,8 @@ final_metrics <- data.frame(
 
 kable(final_metrics, caption = "Final Evaluation Metrics for Ridge (Both) Model on Testing Data", digits = 4)
 
+#MSE increases to 97.18, RMSE rose to 9.86, suggesting the model doesnt generalize well to unseen data (overfit)
+
 ```
 
 
@@ -444,9 +463,34 @@ model_imaging_log <- glm(progression ~ tkvht_base +geom1 + geom2 + gabor1 + gabo
 
 
 ```
+Lasso and ridge for model imaging 
+
+```{r, echo=FALSE}
+
+# Prepare the data for logistic regression with Lasso regularization (L1)
+X_lasso_i <- as.matrix(training[, c( "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_lasso_i <- training$progression  # Binary outcome variable
+
+# Fit Lasso logistic regression (alpha = 1 for Lasso)
+lasso_logit_i <- glmnet(X_lasso_i, y_lasso_i, family = "binomial", alpha = 1, lambda = 0.1)  # Choose a lambda value
 
 
-Lasso and ridge
+
+
+
+# Fit Ridge logistic regression (alpha = 0 for Ridge) L2 Regularization
+ridge_logit_i <- glmnet(X_lasso_i, y_lasso_i, family = "binomial", alpha = 0, lambda = 0.1)  # Choose a lambda value
+
+
+
+
+```
+
+
+
+
+Lasso and ridge for both 
 
 ```{r, echo=FALSE}
 
@@ -458,16 +502,96 @@ y_lasso <- training$progression  # Binary outcome variable
 # Fit Lasso logistic regression (alpha = 1 for Lasso)
 lasso_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 1, lambda = 0.1)  # Choose a lambda value
 
-# View the coefficients
-lasso_logit$beta
+
 
 
 
 # Fit Ridge logistic regression (alpha = 0 for Ridge) L2 Regularization
 ridge_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 0, lambda = 0.1)  # Choose a lambda value
 
-# View the coefficients
-ridge_logit$beta
+
+
+
+
+```
+
+
+
+
+
+
+```{r, echo=FALSE}
+
+# Generate predictions for logistic regression models
+# Logistic Regression - TKV Base
+logit_tkvht_base_pred <- predict(tkvht_base_glm, newdata = training, type = "response")
+
+# Logistic Regression - Imaging
+logit_imaging_pred <- predict(model_imaging_log, newdata = training, type = "response")
+
+# Logistic Regression - Both
+logit_both_pred <- predict(model_imaging_log, newdata = training, type = "response")
+
+# Generate predictions for Lasso and Ridge logistic regression models
+# Lasso Logistic Regression - Imaging Data
+lasso_logit_imaging_pred <- predict(lasso_logit_i, s = 0.1, newx = X_lasso_i, type = "response")
+
+# Ridge Logistic Regression - Imaging Data
+ridge_logit_imaging_pred <- predict(ridge_logit_i, s = 0.1, newx = X_lasso_i, type = "response")
+
+# Lasso Logistic Regression - Combined (TKV Base + Imaging Data)
+lasso_logit_both_pred <- predict(lasso_logit, s = 0.1, newx = X_lasso, type = "response")
+
+# Ridge Logistic Regression - Combined (TKV Base + Imaging Data)
+ridge_logit_both_pred <- predict(ridge_logit, s = 0.1, newx = X_lasso, type = "response")
+
+# Calculate ROC for each model
+roc_tkvht_base <- roc(training$progression, logit_tkvht_base_pred)
+roc_imaging <- roc(training$progression, logit_imaging_pred)
+roc_both <- roc(training$progression, logit_both_pred)
+
+roc_lasso_imaging <- roc(training$progression, lasso_logit_imaging_pred)
+roc_ridge_imaging <- roc(training$progression, ridge_logit_imaging_pred)
+
+roc_lasso_both <- roc(training$progression, lasso_logit_both_pred)
+roc_ridge_both <- roc(training$progression, ridge_logit_both_pred)
+
+# Calculate AUC for each model
+auc_tkvht_base <- auc(roc_tkvht_base)
+auc_imaging <- auc(roc_imaging)
+auc_both <- auc(roc_both)
+
+auc_lasso_imaging <- auc(roc_lasso_imaging)
+auc_ridge_imaging <- auc(roc_ridge_imaging)
+
+auc_lasso_both <- auc(roc_lasso_both)
+auc_ridge_both <- auc(roc_ridge_both)
+
+# Create a comparison table for AUC values
+auc_results <- data.frame(
+  Model = c("Logistic (TKV Base)", "Logistic (Imaging)", "Logistic (Both)",
+            "Lasso (Imaging)", "Ridge (Imaging)", "Lasso (Both)", "Ridge (Both)"),
+  AUC = c(auc_tkvht_base, auc_imaging, auc_both,
+          auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both)
+)
+
+# Display the AUC comparison table
+kable(auc_results, caption = "Model Comparison: AUC", digits = 4)
+
+
+
+
+
+
+
+```
+
+Selction: logistic regression (image featuring)
+
+```{r,echo=FALSE}
+
+model_imaging_logit <- glm(progression ~ geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + lbp1 + lbp2 + lbp3 + lbp5, data = testing )
+
 
 
 
