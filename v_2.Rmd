@@ -27,9 +27,9 @@ library(pROC)
 
 #linux pathway
 #adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
-adpkd <- read.csv("~/Downloads/Project3_data.csv")
+#adpkd <- read.csv("~/Downloads/Project3_data.csv")
 #windows pathway 
-#adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
+adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
 
 
 ```
@@ -584,7 +584,7 @@ model_imaging_log <- glm(progression ~ geom1 + geom2 + gabor1 + gabor2 + gabor3 
 
 summary(model_imaging_log)
 
-model_imaging_log <- glm(progression ~ tkvht_base +geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + lbp1 + lbp2 + lbp3 + lbp5, data = training )
+model_both_log <- glm(progression ~ tkvht_base +geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + lbp1 + lbp2 + lbp3 + lbp5, data = training )
 
 
 ```
@@ -645,7 +645,8 @@ ridge_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 0, lambda =
 
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
+#pulls warning about using matrix as predictor. for futureproofing could look into using lasso/ridge without matricies (updated package no longer needs this i think. Fine to run our code as is)
 
 # Generate predictions for logistic regression models
 # Logistic Regression - TKV Base
@@ -655,7 +656,7 @@ logit_tkvht_base_pred <- predict(tkvht_base_glm, newdata = training, type = "res
 logit_imaging_pred <- predict(model_imaging_log, newdata = training, type = "response")
 
 # Logistic Regression - Both
-logit_both_pred <- predict(model_imaging_log, newdata = training, type = "response")
+logit_both_pred <- predict(model_both_log, newdata = training, type = "response")
 
 # Generate predictions for Lasso and Ridge logistic regression models
 # Lasso Logistic Regression - Imaging Data
@@ -716,23 +717,35 @@ kable(auc_results, caption = "Model Comparison: AUC", digits = 4)
 
 ```{r,echo=FALSE}
 # Convert probabilities to binary predictions (threshold = 0.5)
+logit_tkvht_base_pred_bin <- ifelse(logit_tkvht_base_pred > 0.5, 1, 0)
+logit_imaging_pred_bin <- ifelse(logit_imaging_pred > 0.5, 1, 0)
+logit_both_pred_bin <- ifelse(logit_both_pred > 0.5, 1, 0)
 lasso_logit_imaging_pred_bin <- ifelse(lasso_logit_imaging_pred > 0.5, 1, 0)
 ridge_logit_imaging_pred_bin <- ifelse(ridge_logit_imaging_pred > 0.5, 1, 0)
 lasso_logit_both_pred_bin <- ifelse(lasso_logit_both_pred > 0.5, 1, 0)
 ridge_logit_both_pred_bin <- ifelse(ridge_logit_both_pred > 0.5, 1, 0)
 
 # Calculate confusion matrix and metrics for Lasso and Ridge models
+logit_tkvht_base_cm <- confusionMatrix(as.factor(logit_tkvht_base_pred_bin), as.factor(training$progression))
+logit_imaging_cm <- confusionMatrix(as.factor(logit_imaging_pred_bin), as.factor(training$progression))
+logit_both_cm <- confusionMatrix(as.factor(logit_both_pred_bin), as.factor(training$progression))
 lasso_logit_imaging_cm <- confusionMatrix(as.factor(lasso_logit_imaging_pred_bin), as.factor(training$progression))
 ridge_logit_imaging_cm <- confusionMatrix(as.factor(ridge_logit_imaging_pred_bin), as.factor(training$progression))
 lasso_logit_both_cm <- confusionMatrix(as.factor(lasso_logit_both_pred_bin), as.factor(training$progression))
 ridge_logit_both_cm <- confusionMatrix(as.factor(ridge_logit_both_pred_bin), as.factor(training$progression))
 
 # Extract accuracy and F1 score from the confusion matrix
+logit_tkvht_base_accuracy   <- logit_tkvht_base_cm$overall['Accuracy']
+logit_imaging_accuracy <- logit_imaging_cm$overall['Accuracy']
+logit_both_accuracy<- logit_both_cm$overall['Accuracy']
 lasso_logit_imaging_accuracy <- lasso_logit_imaging_cm$overall['Accuracy']
 ridge_logit_imaging_accuracy <- ridge_logit_imaging_cm$overall['Accuracy']
 lasso_logit_both_accuracy <- lasso_logit_both_cm$overall['Accuracy']
 ridge_logit_both_accuracy <- ridge_logit_both_cm$overall['Accuracy']
 
+logit_tkvht_base_f1 <- logit_tkvht_base_cm$byClass['F1']
+logit_imaging_f1 <- logit_imaging_cm$byClass['F1']
+logit_both_f1 <- logit_both_cm$byClass['F1']
 lasso_logit_imaging_f1 <- lasso_logit_imaging_cm$byClass['F1']
 ridge_logit_imaging_f1 <- ridge_logit_imaging_cm$byClass['F1']
 lasso_logit_both_f1 <- lasso_logit_both_cm$byClass['F1']
