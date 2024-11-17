@@ -590,9 +590,23 @@ Selction: logistic regression (image featuring)
 
 ```{r,echo=FALSE}
 
-model_imaging_logit <- glm(progression ~ geom1 + geom2 + gabor1 + gabor2 + gabor3 + gabor4 + gabor5 + glcm1 + glcm2 + txti1 + txti2 + txti3 + txti4 + txti5 + lbp1 + lbp2 + lbp3 + lbp5, data = testing )
+#make testing predictions on unseen data
+test_predictions <- predict(model_imaging_logit, newdata = testing, type = "response")
 
+#compute ROC and AUC
+roc_curve <-roc(testing$progression,test_predictions)
 
+#AUC
+auc_value <-auc(roc_curve)
 
+print(paste("AUC For Logistic Regression (Imaging) Model:",round(auc_value, 4)))
+
+plot(roc_curve, main = "ROC Curve For Logistic Regression (Imaging)", col = "blue",lwd=2)
+
+# Generate confusion matrix using caret
+#conf_matrix <- confusionMatrix(factor(predictions), factor(testing$progression))
+
+# Print the confusion matrix
+#print(conf_matrix)
 
 ```
