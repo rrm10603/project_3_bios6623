@@ -646,6 +646,8 @@ ridge_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 0, lambda =
 
 
 ```{r, echo=FALSE, warning=FALSE}
+
+library(pROC)
 #pulls warning about using matrix as predictor. for futureproofing could look into using lasso/ridge without matricies (updated package no longer needs this i think. Fine to run our code as is)
 
 # Generate predictions for logistic regression models
@@ -694,20 +696,14 @@ auc_lasso_both <- auc(roc_lasso_both)
 auc_ridge_both <- auc(roc_ridge_both)
 
 # Create a comparison table for AUC values
-auc_roc__results <- data.frame(
+auc_results <- data.frame(
   Model = c("Logistic (TKV Base)", "Logistic (Imaging)", "Logistic (Both)",
             "Lasso (Imaging)", "Ridge (Imaging)", "Lasso (Both)", "Ridge (Both)"),
   AUC = c(auc_tkvht_base, auc_imaging, auc_both,
-          auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both),
-  ROC = c(roc_tkvht_base,roc_imaging,roc_both,roc_lasso_imaging,roc_ridge_imaging,roc_lasso_both,roc_ridge_both)
-)
+          auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both))
 
 # Display the AUC comparison table
 kable(auc_roc__results, caption = "Model Comparison: AUC and ROC", digits = 4)
-
-
-
-
 
 
 
@@ -889,7 +885,6 @@ test_ridge_logit_both_recall <- test_ridge_logit_both_cm$byClass['Recall']
 test_ridge_logit_both_specificity <- test_ridge_logit_both_cm$byClass['Specificity']
 
 
-
 # Create a performance summary table for all models (excluding ROC and AUC)
 performance_summary <- data.frame(
   Model = c("Logistic (Imaging)", "Logistic (TKV)", "Logistic (Both)", 
@@ -914,5 +909,76 @@ performance_summary <- data.frame(
 # Display the performance summary
 print(performance_summary)
 
+
+```
+
+
+
+
+```{r,echo=FALSE}
+
+# 1. Logistic regression model with tkvht_base (Base) prediction
+roc_tkvht_base <- roc(testing$progression, test_tkv_log_pred)
+auc_tkvht_base <- auc(roc_tkvht_base)
+
+# 2. Logistic regression model with imaging (imaging model)
+roc_imaging <- roc(testing$progression, test_predictions)
+auc_imaging <- auc(roc_imaging)
+
+# 3. Logistic regression model with tkvht_base (Base) for test_logit_tkvt
+roc_tkvht_logit <- roc(testing$progression, test_logit_tkvt)
+auc_tkvht_logit <- auc(roc_tkvht_logit)
+
+# 4. Logistic regression model with both variables (both model)
+roc_both_logit <- roc(testing$progression, test_logit_both)
+auc_both_logit <- auc(roc_both_logit)
+
+# 5. Lasso regression model on imaging data (Lasso regularization on X_lasso_ti)
+roc_lasso_imaging <- roc(testing$progression, test_las_logit_imaging)
+auc_lasso_imaging <- auc(roc_lasso_imaging)
+
+# 6. Lasso regression model on both data (Lasso regularization on X_lasso)
+roc_lasso_both <- roc(testing$progression, test_las_logit_both_pred)
+auc_lasso_both <- auc(roc_lasso_both)
+
+# 7. Ridge regression model on imaging data (Ridge regularization on X_lasso_ti)
+roc_ridge_imaging <- roc(testing$progression, test_ridge_imaging_pred)
+auc_ridge_imaging <- auc(roc_ridge_imaging)
+
+# 8. Ridge regression model on both data (Ridge regularization on X_lasso)
+roc_ridge_both <- roc(testing$progression, test_ridge_logit_both_pred)
+auc_ridge_both <- auc(roc_ridge_both)
+
+# Create a data frame to store AUC values for each model
+auc_table <- data.frame(
+  Model = c("Logistic (tkvht_base)", 
+            "Logistic (Imaging)", 
+            "Logistic (tkvht_base - Logit)", 
+            "Logistic (Both Variables)", 
+            "Lasso (Imaging)", 
+            "Lasso (Both Variables)", 
+            "Ridge (Imaging)", 
+            "Ridge (Both Variables)"),
+  AUC = c(auc_tkvht_base, 
+          auc_imaging, 
+          auc_tkvht_logit, 
+          auc_both_logit, 
+          auc_lasso_imaging, 
+          auc_lasso_both, 
+          auc_ridge_imaging, 
+          auc_ridge_both)
+)
+
+# Print the table
+#print(auc_table)
+
+# Round AUC values to two decimal places
+auc_table$AUC <- round(auc_table$AUC, 2)
+
+# Create a clean table with kable
+kable(auc_table, 
+      caption = "Comparison of AUC Values for Different Models", 
+      col.names = c("Model", "AUC"), 
+      format = "pipe")  # For markdown tables
 
 ```
