@@ -694,15 +694,16 @@ auc_lasso_both <- auc(roc_lasso_both)
 auc_ridge_both <- auc(roc_ridge_both)
 
 # Create a comparison table for AUC values
-auc_results <- data.frame(
+auc_roc__results <- data.frame(
   Model = c("Logistic (TKV Base)", "Logistic (Imaging)", "Logistic (Both)",
             "Lasso (Imaging)", "Ridge (Imaging)", "Lasso (Both)", "Ridge (Both)"),
   AUC = c(auc_tkvht_base, auc_imaging, auc_both,
-          auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both)
+          auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both),
+  ROC = c(roc_tkvht_base,roc_imaging,roc_both,roc_lasso_imaging,roc_ridge_imaging,roc_lasso_both,roc_ridge_both)
 )
 
 # Display the AUC comparison table
-kable(auc_results, caption = "Model Comparison: AUC", digits = 4)
+kable(auc_roc__results, caption = "Model Comparison: AUC and ROC", digits = 4)
 
 
 
@@ -770,7 +771,7 @@ kable(auc_results, caption = "Model Comparison: AUC, Accuracy, and F1-Score", di
 
 ```
 
-Selction: logistic regression (image featuring)
+Testing:
 
 ```{r,echo=FALSE}
 
@@ -801,14 +802,49 @@ plot(roc_curve, main = "ROC Curve For Logistic Regression (Imaging)", col = "blu
 
 ```{r}
 
+#prepare testing data for lasso and ridge
+# Prepare the data for logistic regression with Lasso regularization (L1)
+X_lasso_ti <- as.matrix(testing[, c( "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_lasso_ti <- testing$progression  # Binary outcome variable
+
+# Prepare the data for logistic regression with Lasso regularization (L1)
+X_lasso <- as.matrix(testing[, c( "tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                  "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+y_lasso <- testing$progression  # Binary outcome variable
+
+
 #make testing predictions on unseen data
+test_tkv_log_pred <- predict(tkvht_base_glm, newdata = testing, type ="response")
 test_predictions <- predict(model_imaging_log, newdata = testing, type = "response")
+test_logit_tkvt <-predict(tkvht_base_glm,newdata=testing, type = "response")
+test_logit_both <-predict(model_both_log,newdata = testing,type ="response")
+test_las_logit_imaging <- predict(lasso_logit_i, newx = X_lasso_ti, s = 0.1, type = "response")
+test_las_logit_both_pred <-predict(lasso_logit, newx = X_lasso, s = 0.1, type = "response")
+test_ridge_imaging_pred <- predict(ridge_logit_i, newx = X_lasso_ti, s = 0.1, type = "response")
+test_ridge_logit_both_pred <-predict(ridge_logit, newx = X_lasso, s = 0.1, type = "response")
 
 #threshold binary predictions 
+test_tkv_pred_bin <- ifelse(test_tkv_log_pred >0.5,1,0)
 test_pred_binary <- ifelse(test_predictions > 0.5, 1, 0)
+test_logit_imaging_pred_bin <- ifelse(test_logit_tkvt > 0.5, 1, 0)
+test_logit_both_pred_bin <- ifelse(test_logit_both > 0.5, 1, 0)
+test_lasso_logit_imaging_pred_bin <- ifelse(test_las_logit_imaging > 0.5, 1, 0)
+test_ridge_logit_imaging_pred_bin <- ifelse(test_ridge_imaging_pred > 0.5, 1, 0)
+test_lasso_logit_both_pred_bin <- ifelse(test_ridge_imaging_pred > 0.5, 1, 0)
+test_ridge_logit_both_pred_bin <- ifelse(test_ridge_logit_both_pred > 0.5, 1, 0)
+
 
 # Confusion Matrix
+test_tkv_cm <- confusionMatrix(as.factor(test_tkv_pred_bin), as.factor(testing$progression))
 test_cm <- confusionMatrix(as.factor(test_pred_binary), as.factor(testing$progression))
+test_logit_imaging_cm <- confusionMatrix(as.factor(test_logit_imaging_pred_bin), as.factor(testing$progression))
+test_logit_both_cm <- confusionMatrix(as.factor(test_logit_both_pred_bin), as.factor(testing$progression))
+test_lasso_logit_imaging_cm <- confusionMatrix(as.factor(test_lasso_logit_imaging_pred_bin), as.factor(testing$progression))
+test_ridge_logit_imaging_cm <- confusionMatrix(as.factor(test_ridge_logit_imaging_pred_bin), as.factor(testing$progression))
+test_lasso_logit_both_cm <- confusionMatrix(as.factor(test_lasso_logit_both_pred_bin), as.factor(testing$progression))
+test_ridge_logit_both_cm <- confusionMatrix(as.factor(test_ridge_logit_both_pred_bin), as.factor(testing$progression))
+
 
 # Extract individual metrics from the confusion matrix
 test_accuracy <- test_cm$overall['Accuracy']
@@ -817,15 +853,62 @@ test_precision <- test_cm$byClass['Precision']
 test_recall <- test_cm$byClass['Recall']
 test_specificity <- test_cm$byClass['Specificity']
 
-# Output AUC
+# For Logistic (Both)
+test_logit_both_accuracy <- test_logit_both_cm$overall['Accuracy']
+test_logit_both_f1 <- test_logit_both_cm$byClass['F1']
+test_logit_both_precision <- test_logit_both_cm$byClass['Precision']
+test_logit_both_recall <- test_logit_both_cm$byClass['Recall']
+test_logit_both_specificity <- test_logit_both_cm$byClass['Specificity']
 
-test_roc <- roc(testing$progression, test_predictions)
-test_auc <- auc(test_roc)
+# For Lasso Logistic (Imaging)
+test_lasso_logit_imaging_accuracy <- test_lasso_logit_imaging_cm$overall['Accuracy']
+test_lasso_logit_imaging_f1 <- test_lasso_logit_imaging_cm$byClass['F1']
+test_lasso_logit_imaging_precision <- test_lasso_logit_imaging_cm$byClass['Precision']
+test_lasso_logit_imaging_recall <- test_lasso_logit_imaging_cm$byClass['Recall']
+test_lasso_logit_imaging_specificity <- test_lasso_logit_imaging_cm$byClass['Specificity']
 
-# Create a performance summary table
+# For Ridge Logistic (Imaging)
+test_ridge_logit_imaging_accuracy <- test_ridge_logit_imaging_cm$overall['Accuracy']
+test_ridge_logit_imaging_f1 <- test_ridge_logit_imaging_cm$byClass['F1']
+test_ridge_logit_imaging_precision <- test_ridge_logit_imaging_cm$byClass['Precision']
+test_ridge_logit_imaging_recall <- test_ridge_logit_imaging_cm$byClass['Recall']
+test_ridge_logit_imaging_specificity <- test_ridge_logit_imaging_cm$byClass['Specificity']
+
+# For Lasso Logistic (Both)
+test_lasso_logit_both_accuracy <- test_lasso_logit_both_cm$overall['Accuracy']
+test_lasso_logit_both_f1 <- test_lasso_logit_both_cm$byClass['F1']
+test_lasso_logit_both_precision <- test_lasso_logit_both_cm$byClass['Precision']
+test_lasso_logit_both_recall <- test_lasso_logit_both_cm$byClass['Recall']
+test_lasso_logit_both_specificity <- test_lasso_logit_both_cm$byClass['Specificity']
+
+# For Ridge Logistic (Both)
+test_ridge_logit_both_accuracy <- test_ridge_logit_both_cm$overall['Accuracy']
+test_ridge_logit_both_f1 <- test_ridge_logit_both_cm$byClass['F1']
+test_ridge_logit_both_precision <- test_ridge_logit_both_cm$byClass['Precision']
+test_ridge_logit_both_recall <- test_ridge_logit_both_cm$byClass['Recall']
+test_ridge_logit_both_specificity <- test_ridge_logit_both_cm$byClass['Specificity']
+
+
+
+# Create a performance summary table for all models (excluding ROC and AUC)
 performance_summary <- data.frame(
-  Metric = c("Accuracy", "Precision", "Recall", "F1-Score", "Specificity", "AUC"),
-  Value = c(test_accuracy, test_precision, test_recall, test_f1, test_specificity, test_auc)
+  Model = c("Logistic (Imaging)", "Logistic (TKV)", "Logistic (Both)", 
+            "Lasso (Imaging)", "Lasso (Both)", "Ridge (Imaging)", "Ridge (Both)"),
+  Accuracy = c(test_accuracy, test_tkv_cm$overall['Accuracy'], test_logit_both_accuracy,
+               test_lasso_logit_imaging_accuracy, test_lasso_logit_both_accuracy, 
+               test_ridge_logit_imaging_accuracy, test_ridge_logit_both_accuracy),
+  Precision = c(test_precision, test_tkv_cm$byClass['Precision'], test_logit_both_precision,
+                test_lasso_logit_imaging_precision, test_lasso_logit_both_precision,
+                test_ridge_logit_imaging_precision, test_ridge_logit_both_precision),
+  Recall = c(test_recall, test_tkv_cm$byClass['Recall'], test_logit_both_recall,
+             test_lasso_logit_imaging_recall, test_lasso_logit_both_recall,
+             test_ridge_logit_imaging_recall, test_ridge_logit_both_recall),
+  F1_Score = c(test_f1, test_tkv_cm$byClass['F1'], test_logit_both_f1,
+               test_lasso_logit_imaging_f1, test_lasso_logit_both_f1, 
+               test_ridge_logit_imaging_f1, test_ridge_logit_both_f1),
+  Specificity = c(test_specificity, test_tkv_cm$byClass['Specificity'], test_logit_both_specificity,
+                  test_lasso_logit_imaging_specificity, test_lasso_logit_both_specificity,
+                  test_ridge_logit_imaging_specificity, test_ridge_logit_both_specificity)
 )
 
 # Display the performance summary
