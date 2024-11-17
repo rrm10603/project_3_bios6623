@@ -44,7 +44,7 @@ colSums(is.na(adpkd))
 numeric_columns <- sapply(adpkd, is.numeric)
 
 for (col in names(adpkd)[numeric_columns]) {
-  hist(adpkd[[col]], main = paste("Histogram of", col), xlab = col)
+  hist(adpkd[[col]], main = paste("Figure 1: Histogram of", col), xlab = col)
 }
 ```
 
@@ -94,7 +94,7 @@ shapiro_results <- lapply(adpkd[, numeric_columns], shapiro.test)
 shapiro_results
 ```
 
-```{r}
+```{r,echo=FALSE}
 # Get correlation matrix
 numeric_columns <- sapply(adpkd, is.numeric)
 cor_matrix <- cor(adpkd[, numeric_columns])   
@@ -105,7 +105,7 @@ print(cor_matrix)
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 # Get highly correlated features
 high_correlations <- which(abs(cor_matrix) > 0.8, arr.ind = TRUE)
 
@@ -123,7 +123,7 @@ high_correlations_pairs
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 # Address multicolinearity
 # ibp4 is highly correlated with both lbp1 and lbp3, lbp4 is also the least correlated with our outcome variables so that is the feature we will delete to address the multicolinearity 
 
@@ -134,20 +134,20 @@ head(adpkd_no_multico)
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 # box plots of independent variables 
 vars_to_transform <- setdiff(names(adpkd_no_multico), c("Subject.ID", "tkvht_visit2","progression","tkvht_change"))
 x_variables <- adpkd_no_multico[, vars_to_transform]
 
 for (col in names(x_variables)) {
-  boxplot(x_variables[[col]], main = paste("Boxplot of", col), ylab = col)
+  boxplot(x_variables[[col]], main = paste("Figure 2: Boxplot of", col), ylab = col)
 }
 
 # While the box plots do show that we have outliers we do not have any evidence that these outliers are an error, for now we will leave them in until we decide on the features that we are keeping and then we will revisit how to address them (possibly z-score 3 std's away)
 ```
 
 
-```{r}
+```{r,echo=FALSE}
 # Because the values are not normally distributed we decided to use normalization over standardization 
 
 #normalizing x values to put them on a similar scale for analysis 
@@ -163,7 +163,7 @@ head(adpkd_x_vars_normalized)
 
 Task 1: For part 2 and part 3 we should do a linear regression, a ridge regression and a lasso regression so that we can compare them and decide on which linear model works best, then we can choose the model that gives us the best AIC and lowest mse as our final model for that part 
 
-```{r}
+```{r,echo=FALSE}
 y_variables <- adpkd_no_multico[, c("Subject.ID", "tkvht_visit2","progression","tkvht_change")]
 y_variables
 ```
@@ -223,13 +223,13 @@ model_both_resid <-  resid(model_both_lm)
 ggplot(data= NULL, aes(x=model_tkv_fitted,y=model_tkv_resid)) +
   geom_point()+
   geom_hline(yintercept = 0, linetype="dashed", color = "red")+
-  labs(title = "figure: tkv change lm residuals vs fitted",
+  labs(title = "figure 3: tkv change lm residuals vs fitted",
        x = "fitted values",
        y= "residual values")+
   theme_minimal()
 
 #qqplot to check normality
-qqnorm(model_tkv_resid, main = "Q-Q Plot of Residuals for tkv base lm")
+qqnorm(model_tkv_resid, main = "figure 4:Q-Q Plot of Residuals for tkv base lm")
 qqline(model_tkv_resid, col= "red")
 
 
@@ -237,13 +237,13 @@ qqline(model_tkv_resid, col= "red")
 ggplot(data= NULL, aes(x=model_image_fitted,y=model_image_resid)) +
   geom_point()+
   geom_hline(yintercept = 0, linetype="dashed", color = "red")+
-  labs(title = "figure: model imaging lm residuals vs fitted",
+  labs(title = "figure 3: model imaging lm residuals vs fitted",
        x = "fitted values",
        y= "residual values")+
   theme_minimal()
 
 #qqplot to check normality
-qqnorm(model_image_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqnorm(model_image_resid, main = "figure 4: Q-Q Plot of Residuals for model imaging lm")
 qqline(model_image_resid, col= "red")
 
 #appears as though normality could be violated, this could be due to outliers
@@ -252,13 +252,13 @@ qqline(model_image_resid, col= "red")
 ggplot(data= NULL, aes(x=model_both_fitted,y=model_both_resid)) +
   geom_point()+
   geom_hline(yintercept = 0, linetype="dashed", color = "red")+
-  labs(title = "figure: tkv change lm residuals vs fitted",
+  labs(title = "figure 3: tkv change lm residuals vs fitted",
        x = "fitted values",
        y= "residual values")+
   theme_minimal()
 
 #qqplot to check normality
-qqnorm(model_tkv_resid, main = "Q-Q Plot of Residuals for model imaging lm")
+qqnorm(model_tkv_resid, main = "Figure 4:Q-Q Plot of Residuals for model imaging lm")
 qqline(model_tkv_resid, col= "red")
 
 ```
@@ -279,7 +279,7 @@ best_lasso_lambda<-lasso_image$lambda.min
 #returns 1.43536
 
 # Get the coefficients
-lasso_image$beta
+#lasso_image$beta
 
 #for both: 
 
@@ -294,8 +294,7 @@ lasso_both <- glmnet(X_both, y_both, alpha = 1, lambda = 0.1)  # Use lambda=0.1 
 lasso_both_lambda <- cv.glmnet(X_both,y_both,alpha=1)
 best_both_lambda <- lasso_both_lambda$lambda.min
 best_both_lambda #returns 2.508332but increases RMSE
-# Get the coefficients
-lasso_both$beta
+
 
 ```
 
@@ -319,8 +318,7 @@ best_lambda_image <-ridge_image_lambda$lambda.min
 best_lambda_image
 #returns best lambda value of 2285.499 but this will increase RMSE- underfits?
 
-# View the coefficients
-ridge_image$beta
+
 
 
 # Prepare the data for Ridge regression 
@@ -336,8 +334,6 @@ ridge_both_lambda <-cv.glmnet(X_both, y_both, alpha=0)
 #best_lambda_both 
 #returns 2508.332 but this increases RMSE- underfits?
 
-# View the coefficients
-ridge_both$beta
 
 
 ```
@@ -408,164 +404,76 @@ kable(results, caption = "Model Comparison: AIC, MSE, and RMSE", digits = 4)
 
 ```
 
-Testing Final selection : Ridge both 
+Testing  
 
 ```{r}
+
+#For ridge both
 # Prepare the testing data (convert to matrix, same features used for training)
 X_test <- as.matrix(testing[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
                                 "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
 
-# Use the Ridge (Both) model to make predictions on the testing data
+X_test_i <- as.matrix(testing[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+
+X_test_s <- as.matrix(testing[, "tkvht_base"])
+
+# Use the Ridge models to make predictions on the testing data
 ridge_both_pred_test <- predict(ridge_both, s = 0.1, newx = X_test)
+ridge_image_pred_test <- predict(ridge_image,s=0.1, newx=X_test_i)
 
-# Calculate MSE (Mean Squared Error) for Ridge (Both) on the testing data
-mse_ridge_both_test <- mean((testing$tkvht_change - ridge_both_pred_test)^2)
+#using Lasso models to make predictions on the testing data
 
-# Calculate RMSE (Root Mean Squared Error)
-rmse_ridge_both_test <- sqrt(mse_ridge_both_test)
-
-# Output the results
-cat("Final Evaluation Metrics for Ridge (Both) Model on Testing Data:\n")
-cat("MSE (Mean Squared Error): ", round(mse_ridge_both_test, 4), "\n")
-cat("RMSE (Root Mean Squared Error): ", round(rmse_ridge_both_test, 4), "\n")
+lasso_image_pred_test <-predict(lasso_image,s=0.1, newx = X_test_i)
+lasso_both_pred_test <- predict(lasso_both,s=0.1,newx = X_test)
 
 
-# Create a data frame for the final evaluation metrics
-final_metrics <- data.frame(
-  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
-  Value = c(round(mse_ridge_both_test, 4), round(rmse_ridge_both_test, 4))
-)
+#using linear (both and just image)
 
-kable(final_metrics, caption = "Final Evaluation Metrics for Ridge (Both) Model on Testing Data", digits = 4)
-
-#MSE increases to 97.18, RMSE rose to 9.86, suggesting the model doesnt generalize well to unseen data (overfit)
-```
-
-linear model both testing
-```{r}
-# Prepare the testing data (convert to matrix, same features used for training)
-X_test <- as.matrix(testing[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
-                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
-# Use the linear (Both) model to make predictions on the testing data
 both_lm_pred_test <- predict(model_both_lm, newx = X_test)
+lm_image_pred_test <- predict(model_image_lm, newx = X_test)
+tkv_lm_pred_test <- predict(model_tkv_lm, newx = X_test_s)
 
-# Calculate MSE (Mean Squared Error) for linear (Both) on the testing data
+
+# Calculate MSE for all models
+mse_ridge_both_test <- mean((testing$tkvht_change - ridge_both_pred_test)^2)
+mse_ridge_image_test <- mean((testing$tkvht_change - ridge_image_pred_test)^2)
+mse_lasso_both_test <- mean((testing$tkvht_change - lasso_both_pred_test)^2)
+mse_lasso_image_test <- mean((testing$tkvht_change - lasso_image_pred_test)^2)
 mse_both_lm_test <- mean((testing$tkvht_change - both_lm_pred_test)^2)
-
-# Calculate RMSE (Root Mean Squared Error)
-rmse_both_lm_test <- sqrt(mse_both_lm_test)
-
-# Output the results
-cat("Final Evaluation Metrics for Linear (BOTH) Model on Testing Data:\n")
-cat("MSE (Mean Squared Error): ", round(mse_both_lm_test, 4), "\n")
-cat("RMSE (Root Mean Squared Error): ", round(rmse_both_lm_test, 4), "\n")
-
-
-# Create a data frame for the final evaluation metrics
-final_metrics <- data.frame(
-  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
-  Value = c(round(mse_both_lm_test, 4), round(rmse_both_lm_test, 4))
-)
-
-kable(final_metrics, caption = "Final Evaluation Metrics for Linear (BOTH) Model on Testing Data", digits = 4)
-```
-
-Linear regression with just tkvht_base:
-```{r,echo=FALSE}
-
-# Prepare the testing data (convert to matrix, same features used for training)
-X_test <- as.matrix(testing[, "tkvht_base"])
-
-# Use the Ridge (Both) model to make predictions on the testing data
-tkv_lm_pred_test <- predict(model_tkv_lm, newx = X_test)
-
-# Calculate MSE (Mean Squared Error) for Ridge (Both) on the testing data
+mse_lm_image_test <- mean((testing$tkvht_change - lm_image_pred_test)^2)
 mse_tkv_lm_test <- mean((testing$tkvht_change - tkv_lm_pred_test)^2)
 
-# Calculate RMSE (Root Mean Squared Error)
+# Calculate RMSE for all models
+rmse_ridge_both_test <- sqrt(mse_ridge_both_test)
+rmse_ridge_image_test <- sqrt(mse_ridge_image_test)
+rmse_lasso_both_test <- sqrt(mse_lasso_both_test)
+rmse_lasso_image_test <- sqrt(mse_lasso_image_test)
+rmse_both_lm_test <- sqrt(mse_both_lm_test)
+rmse_lm_image_test <- sqrt(mse_lm_image_test)
 rmse_tkv_lm_test <- sqrt(mse_tkv_lm_test)
 
-# Output the results
-cat("Final Evaluation Metrics for Linear (TKVHT) Model on Testing Data:\n")
-cat("MSE (Mean Squared Error): ", round(mse_tkv_lm_test, 4), "\n")
-cat("RMSE (Root Mean Squared Error): ", round(rmse_tkv_lm_test, 4), "\n")
-
-
 # Create a data frame for the final evaluation metrics
 final_metrics <- data.frame(
-  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
-  Value = c(round(mse_tkv_lm_test, 4), round(rmse_tkv_lm_test, 4))
+  Model = c("Ridge (Both)", "Ridge (Image)", "Lasso (Both)", "Lasso (Image)", 
+            "Linear (Both)", "Linear (Image)", "Linear (TKV)"),
+  MSE = c(round(mse_ridge_both_test, 4), round(mse_ridge_image_test, 4), 
+          round(mse_lasso_both_test, 4), round(mse_lasso_image_test, 4), 
+          round(mse_both_lm_test, 4), round(mse_lm_image_test, 4), 
+          round(mse_tkv_lm_test, 4)),
+  RMSE = c(round(rmse_ridge_both_test, 4), round(rmse_ridge_image_test, 4), 
+           round(rmse_lasso_both_test, 4), round(rmse_lasso_image_test, 4), 
+           round(rmse_both_lm_test, 4), round(rmse_lm_image_test, 4), 
+           round(rmse_tkv_lm_test, 4))
 )
 
-kable(final_metrics, caption = "Final Evaluation Metrics for Linear (TKVHT) Model on Testing Data", digits = 4)
-
-#MSE is only 81.36, RMSE rose to 9.02, suggesting the model doesnt generalize well to unseen data (overfit)
-
+# Output the results in a table
+library(knitr)
+kable(final_metrics, caption = "Model Evaluation Metrics (MSE and RMSE)", digits = 4)
 ```
-Ridge image 
-Linear regression with ridge regularization on testing set 
-```{r}
-
-# Prepare the testing data (convert to matrix, same features used for training)
-X_test <- as.matrix(testing[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
-                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
-
-# Use the Ridge (Image) model to make predictions on the testing data
-ridge_image_pred_test <- predict(ridge_image, s = 0.1, newx = X_test)
-
-# Calculate MSE (Mean Squared Error) for Ridge (Image) on the testing data
-mse_ridge_image_test <- mean((testing$tkvht_change - ridge_image_pred_test)^2)
-
-# Calculate RMSE (Root Mean Squared Error)
-rmse_ridge_image_test <- sqrt(mse_ridge_image_test)
-
-# Output the results
-cat("Final Evaluation Metrics for Ridge (Image) Model on Testing Data:\n")
-cat("MSE (Mean Squared Error): ", round(mse_ridge_image_test, 4), "\n")
-cat("RMSE (Root Mean Squared Error): ", round(rmse_ridge_image_test, 4), "\n")
 
 
-# Create a data frame for the final evaluation metrics
-final_metrics <- data.frame(
-  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
-  Value = c(round(mse_ridge_image_test, 4), round(rmse_ridge_image_test, 4))
-)
 
-kable(final_metrics, caption = "Final Evaluation Metrics for Ridge (Image) Model on Testing Data", digits = 4)
-
-#MSE increases to 102.5841, RMSE rose to 10.1284, suggesting the model doesnt generalize well to unseen data (overfit)
-
-```
-Linear regression just image 
-model_image_lm
-```{r}
-# Prepare the testing data (convert to matrix, same features used for training)
-X_test <- as.matrix(testing[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
-                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
-
-# Use the Ridge (Image) model to make predictions on the testing data
-lm_image_pred_test <- predict(model_image_lm, newx = X_test)
-
-# Calculate MSE (Mean Squared Error) for Ridge (Image) on the testing data
-mse_lm_image_test <- mean((testing$tkvht_change - lm_image_pred_test)^2)
-
-# Calculate RMSE (Root Mean Squared Error)
-rmse_lm_image_test <- sqrt(mse_lm_image_test)
-
-# Output the results
-cat("Final Evaluation Metrics for Linear (Image) Model on Testing Data:\n")
-cat("MSE (Mean Squared Error): ", round(mse_lm_image_test, 4), "\n")
-cat("RMSE (Root Mean Squared Error): ", round(rmse_lm_image_test, 4), "\n")
-
-
-# Create a data frame for the final evaluation metrics
-final_metrics <- data.frame(
-  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
-  Value = c(round(mse_lm_image_test, 4), round(rmse_lm_image_test, 4))
-)
-
-kable(final_metrics, caption = "Final Evaluation Metrics for Linear (Image) Model on Testing Data", digits = 4)
-```
 
 
 
@@ -645,9 +553,8 @@ ridge_logit <- glmnet(X_lasso, y_lasso, family = "binomial", alpha = 0, lambda =
 
 
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE}
 
-library(pROC)
 #pulls warning about using matrix as predictor. for futureproofing could look into using lasso/ridge without matricies (updated package no longer needs this i think. Fine to run our code as is)
 
 # Generate predictions for logistic regression models
@@ -703,7 +610,7 @@ auc_results <- data.frame(
           auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both))
 
 # Display the AUC comparison table
-kable(auc_roc__results, caption = "Model Comparison: AUC and ROC", digits = 4)
+kable(auc_results, caption = "Table 4: Model Comparison: AUC and ROC", digits = 4)
 
 
 
@@ -763,7 +670,7 @@ auc_results <- data.frame(
 )
 
 # Display the updated table
-kable(auc_results, caption = "Model Comparison: AUC, Accuracy, and F1-Score", digits = 4)
+kable(auc_results, caption = "Table 5: Model Comparison: AUC, Accuracy, and F1-Score", digits = 4)
 
 ```
 
@@ -977,7 +884,7 @@ auc_table$AUC <- round(auc_table$AUC, 2)
 
 # Create a clean table with kable
 kable(auc_table, 
-      caption = "Comparison of AUC Values for Different Models", 
+      caption = "Table 6: Comparison of AUC Values for All Models (Testing)", 
       col.names = c("Model", "AUC"), 
       format = "pipe")  # For markdown tables
 
