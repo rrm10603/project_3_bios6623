@@ -775,7 +775,7 @@ Selction: logistic regression (image featuring)
 ```{r,echo=FALSE}
 
 #make testing predictions on unseen data
-test_predictions <- predict(model_imaging_logit, newdata = testing, type = "response")
+test_predictions <- predict(model_imaging_log, newdata = testing, type = "response")
 
 #compute ROC and AUC
 roc_curve <-roc(testing$progression,test_predictions)
@@ -802,7 +802,7 @@ plot(roc_curve, main = "ROC Curve For Logistic Regression (Imaging)", col = "blu
 ```{r}
 
 #make testing predictions on unseen data
-test_predictions <- predict(model_imaging_logit, newdata = testing, type = "response")
+test_predictions <- predict(model_imaging_log, newdata = testing, type = "response")
 
 #threshold binary predictions 
 test_pred_binary <- ifelse(test_predictions > 0.5, 1, 0)
