@@ -656,3 +656,42 @@ plot(roc_curve, main = "ROC Curve For Logistic Regression (Imaging)", col = "blu
 #print(conf_matrix)
 
 ```
+
+
+
+
+
+```{r}
+
+#make testing predictions on unseen data
+test_predictions <- predict(model_imaging_logit, newdata = testing, type = "response")
+
+#threshold binary predictions 
+test_pred_binary <- ifelse(test_predictions > 0.5, 1, 0)
+
+# Confusion Matrix
+test_cm <- confusionMatrix(as.factor(test_pred_binary), as.factor(testing$progression))
+
+# Extract individual metrics from the confusion matrix
+test_accuracy <- test_cm$overall['Accuracy']
+test_f1 <- test_cm$byClass['F1']
+test_precision <- test_cm$byClass['Precision']
+test_recall <- test_cm$byClass['Recall']
+test_specificity <- test_cm$byClass['Specificity']
+
+# Output AUC
+
+test_roc <- roc(testing$progression, test_predictions)
+test_auc <- auc(test_roc)
+
+# Create a performance summary table
+performance_summary <- data.frame(
+  Metric = c("Accuracy", "Precision", "Recall", "F1-Score", "Specificity", "AUC"),
+  Value = c(test_accuracy, test_precision, test_recall, test_f1, test_specificity, test_auc)
+)
+
+# Display the performance summary
+print(performance_summary)
+
+
+```
