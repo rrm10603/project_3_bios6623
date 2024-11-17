@@ -586,6 +586,52 @@ kable(auc_results, caption = "Model Comparison: AUC", digits = 4)
 
 ```
 
+
+
+
+```{r,echo=FALSE}
+# Convert probabilities to binary predictions (threshold = 0.5)
+lasso_logit_imaging_pred_bin <- ifelse(lasso_logit_imaging_pred > 0.5, 1, 0)
+ridge_logit_imaging_pred_bin <- ifelse(ridge_logit_imaging_pred > 0.5, 1, 0)
+lasso_logit_both_pred_bin <- ifelse(lasso_logit_both_pred > 0.5, 1, 0)
+ridge_logit_both_pred_bin <- ifelse(ridge_logit_both_pred > 0.5, 1, 0)
+
+# Calculate confusion matrix and metrics for Lasso and Ridge models
+lasso_logit_imaging_cm <- confusionMatrix(as.factor(lasso_logit_imaging_pred_bin), as.factor(training$progression))
+ridge_logit_imaging_cm <- confusionMatrix(as.factor(ridge_logit_imaging_pred_bin), as.factor(training$progression))
+lasso_logit_both_cm <- confusionMatrix(as.factor(lasso_logit_both_pred_bin), as.factor(training$progression))
+ridge_logit_both_cm <- confusionMatrix(as.factor(ridge_logit_both_pred_bin), as.factor(training$progression))
+
+# Extract accuracy and F1 score from the confusion matrix
+lasso_logit_imaging_accuracy <- lasso_logit_imaging_cm$overall['Accuracy']
+ridge_logit_imaging_accuracy <- ridge_logit_imaging_cm$overall['Accuracy']
+lasso_logit_both_accuracy <- lasso_logit_both_cm$overall['Accuracy']
+ridge_logit_both_accuracy <- ridge_logit_both_cm$overall['Accuracy']
+
+lasso_logit_imaging_f1 <- lasso_logit_imaging_cm$byClass['F1']
+ridge_logit_imaging_f1 <- ridge_logit_imaging_cm$byClass['F1']
+lasso_logit_both_f1 <- lasso_logit_both_cm$byClass['F1']
+ridge_logit_both_f1 <- ridge_logit_both_cm$byClass['F1']
+
+# Update the comparison table with accuracy and F1
+auc_results <- data.frame(
+  Model = c("Logistic (TKV Base)", "Logistic (Imaging)", "Logistic (Both)",
+            "Lasso (Imaging)", "Ridge (Imaging)", "Lasso (Both)", "Ridge (Both)"),
+  AUC = c(auc_tkvht_base, auc_imaging, auc_both, 
+          auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both),
+  Accuracy = c(logit_tkvht_base_accuracy, logit_imaging_accuracy, logit_both_accuracy, 
+               lasso_logit_imaging_accuracy, ridge_logit_imaging_accuracy,
+               lasso_logit_both_accuracy, ridge_logit_both_accuracy),
+  F1 = c(logit_tkvht_base_f1, logit_imaging_f1, logit_both_f1, 
+         lasso_logit_imaging_f1, ridge_logit_imaging_f1,
+         lasso_logit_both_f1, ridge_logit_both_f1)
+)
+
+# Display the updated table
+kable(auc_results, caption = "Model Comparison: AUC, Accuracy, and F1-Score", digits = 4)
+
+```
+
 Selction: logistic regression (image featuring)
 
 ```{r,echo=FALSE}
