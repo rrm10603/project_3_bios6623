@@ -27,9 +27,9 @@ library(pROC)
 
 #linux pathway
 #adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
-#adpkd <- read.csv("~/Downloads/Project3_data.csv")
+adpkd <- read.csv("~/Downloads/Project3_data.csv")
 #windows pathway 
-adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
+#adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
 
 
 ```
@@ -315,7 +315,7 @@ y_image <- training$tkvht_change  # Response variable
 ridge_image <- glmnet(X_image, y_image, alpha = 0, lambda = 0.1)  # You can choose an appropriate lambda value
 
 ridge_image_lambda <- cv.glmnet(X_image,y_image, alpha=0)
-best_lambda_image <-ridge_image_lamba$lambda.min
+best_lambda_image <-ridge_image_lambda$lambda.min
 best_lambda_image
 #returns best lambda value of 2285.499 but this will increase RMSE- underfits?
 
@@ -408,10 +408,9 @@ kable(results, caption = "Model Comparison: AIC, MSE, and RMSE", digits = 4)
 
 ```
 
-Testing Final selection :
+Testing Final selection : Ridge both 
 
-```{r,echo=FALSE}
-
+```{r}
 # Prepare the testing data (convert to matrix, same features used for training)
 X_test <- as.matrix(testing[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
                                 "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
@@ -440,8 +439,134 @@ final_metrics <- data.frame(
 kable(final_metrics, caption = "Final Evaluation Metrics for Ridge (Both) Model on Testing Data", digits = 4)
 
 #MSE increases to 97.18, RMSE rose to 9.86, suggesting the model doesnt generalize well to unseen data (overfit)
+```
+
+linear model both testing
+```{r}
+# Prepare the testing data (convert to matrix, same features used for training)
+X_test <- as.matrix(testing[, c("tkvht_base", "geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+# Use the linear (Both) model to make predictions on the testing data
+both_lm_pred_test <- predict(model_both_lm, newx = X_test)
+
+# Calculate MSE (Mean Squared Error) for linear (Both) on the testing data
+mse_both_lm_test <- mean((testing$tkvht_change - both_lm_pred_test)^2)
+
+# Calculate RMSE (Root Mean Squared Error)
+rmse_both_lm_test <- sqrt(mse_both_lm_test)
+
+# Output the results
+cat("Final Evaluation Metrics for Linear (BOTH) Model on Testing Data:\n")
+cat("MSE (Mean Squared Error): ", round(mse_both_lm_test, 4), "\n")
+cat("RMSE (Root Mean Squared Error): ", round(rmse_both_lm_test, 4), "\n")
+
+
+# Create a data frame for the final evaluation metrics
+final_metrics <- data.frame(
+  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
+  Value = c(round(mse_both_lm_test, 4), round(rmse_both_lm_test, 4))
+)
+
+kable(final_metrics, caption = "Final Evaluation Metrics for Linear (BOTH) Model on Testing Data", digits = 4)
+```
+
+Linear regression with just tkvht_base:
+```{r,echo=FALSE}
+
+# Prepare the testing data (convert to matrix, same features used for training)
+X_test <- as.matrix(testing[, "tkvht_base"])
+
+# Use the Ridge (Both) model to make predictions on the testing data
+tkv_lm_pred_test <- predict(model_tkv_lm, newx = X_test)
+
+# Calculate MSE (Mean Squared Error) for Ridge (Both) on the testing data
+mse_tkv_lm_test <- mean((testing$tkvht_change - tkv_lm_pred_test)^2)
+
+# Calculate RMSE (Root Mean Squared Error)
+rmse_tkv_lm_test <- sqrt(mse_tkv_lm_test)
+
+# Output the results
+cat("Final Evaluation Metrics for Linear (TKVHT) Model on Testing Data:\n")
+cat("MSE (Mean Squared Error): ", round(mse_tkv_lm_test, 4), "\n")
+cat("RMSE (Root Mean Squared Error): ", round(rmse_tkv_lm_test, 4), "\n")
+
+
+# Create a data frame for the final evaluation metrics
+final_metrics <- data.frame(
+  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
+  Value = c(round(mse_tkv_lm_test, 4), round(rmse_tkv_lm_test, 4))
+)
+
+kable(final_metrics, caption = "Final Evaluation Metrics for Linear (TKVHT) Model on Testing Data", digits = 4)
+
+#MSE is only 81.36, RMSE rose to 9.02, suggesting the model doesnt generalize well to unseen data (overfit)
 
 ```
+Ridge image 
+Linear regression with ridge regularization on testing set 
+```{r}
+
+# Prepare the testing data (convert to matrix, same features used for training)
+X_test <- as.matrix(testing[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+
+# Use the Ridge (Image) model to make predictions on the testing data
+ridge_image_pred_test <- predict(ridge_image, s = 0.1, newx = X_test)
+
+# Calculate MSE (Mean Squared Error) for Ridge (Image) on the testing data
+mse_ridge_image_test <- mean((testing$tkvht_change - ridge_image_pred_test)^2)
+
+# Calculate RMSE (Root Mean Squared Error)
+rmse_ridge_image_test <- sqrt(mse_ridge_image_test)
+
+# Output the results
+cat("Final Evaluation Metrics for Ridge (Image) Model on Testing Data:\n")
+cat("MSE (Mean Squared Error): ", round(mse_ridge_image_test, 4), "\n")
+cat("RMSE (Root Mean Squared Error): ", round(rmse_ridge_image_test, 4), "\n")
+
+
+# Create a data frame for the final evaluation metrics
+final_metrics <- data.frame(
+  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
+  Value = c(round(mse_ridge_image_test, 4), round(rmse_ridge_image_test, 4))
+)
+
+kable(final_metrics, caption = "Final Evaluation Metrics for Ridge (Image) Model on Testing Data", digits = 4)
+
+#MSE increases to 102.5841, RMSE rose to 10.1284, suggesting the model doesnt generalize well to unseen data (overfit)
+
+```
+Linear regression just image 
+model_image_lm
+```{r}
+# Prepare the testing data (convert to matrix, same features used for training)
+X_test <- as.matrix(testing[, c("geom1", "geom2", "gabor1", "gabor2", "gabor3", "gabor4", "gabor5", 
+                                "glcm1", "glcm2", "txti1", "txti2", "txti3", "txti4", "txti5", "lbp1", "lbp2", "lbp3", "lbp5")])
+
+# Use the Ridge (Image) model to make predictions on the testing data
+lm_image_pred_test <- predict(model_image_lm, newx = X_test)
+
+# Calculate MSE (Mean Squared Error) for Ridge (Image) on the testing data
+mse_lm_image_test <- mean((testing$tkvht_change - lm_image_pred_test)^2)
+
+# Calculate RMSE (Root Mean Squared Error)
+rmse_lm_image_test <- sqrt(mse_lm_image_test)
+
+# Output the results
+cat("Final Evaluation Metrics for Linear (Image) Model on Testing Data:\n")
+cat("MSE (Mean Squared Error): ", round(mse_lm_image_test, 4), "\n")
+cat("RMSE (Root Mean Squared Error): ", round(rmse_lm_image_test, 4), "\n")
+
+
+# Create a data frame for the final evaluation metrics
+final_metrics <- data.frame(
+  Metric = c("MSE (Mean Squared Error)", "RMSE (Root Mean Squared Error)"),
+  Value = c(round(mse_lm_image_test, 4), round(rmse_lm_image_test, 4))
+)
+
+kable(final_metrics, caption = "Final Evaluation Metrics for Linear (Image) Model on Testing Data", digits = 4)
+```
+
 
 
 Logistic regression
