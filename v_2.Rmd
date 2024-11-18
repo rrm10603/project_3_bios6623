@@ -27,9 +27,9 @@ library(pROC)
 
 #linux pathway
 #adpkd <- read.csv("/home/robmcneil/Documents/advanced_data/Project3_data.csv")
-#adpkd <- read.csv("~/Downloads/Project3_data.csv")
+adpkd <- read.csv("~/Downloads/Project3_data.csv")
 #windows pathway 
-adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
+#adpkd <-read.csv("C:/Users/rrm10/OneDrive/Desktop/advanced data analysis/Project3_data.csv")
 
 
 ```
@@ -887,3 +887,61 @@ kable(auc_table,
       format = "pipe")  # For markdown tables
 
 ```
+
+DeLong's test to test for significant differences in AUC 
+```{r}
+# Turn all predictions numberic
+test_tkv_log_pred <- as.numeric(predict(tkvht_base_glm, newdata = testing, type ="response"))
+test_predictions <- as.numeric(predict(model_imaging_log, newdata = testing, type = "response"))
+test_logit_tkvt <-as.numeric(predict(tkvht_base_glm,newdata=testing, type = "response"))
+test_logit_both <-as.numeric(predict(model_both_log,newdata = testing,type ="response"))
+test_las_logit_imaging <- as.numeric(predict(lasso_logit_i, newx = X_lasso_ti, s = 0.1, type = "response"))
+test_las_logit_both_pred <-as.numeric(predict(lasso_logit, newx = X_lasso, s = 0.1, type = "response"))
+test_ridge_imaging_pred <- as.numeric(predict(ridge_logit_i, newx = X_lasso_ti, s = 0.1, type = "response"))
+test_ridge_logit_both_pred <-as.numeric(predict(ridge_logit, newx = X_lasso, s = 0.1, type = "response"))
+
+#Get ROC's with direction specified
+roc_test_tkv_log_pred <- roc(testing$progression, test_tkv_log_pred, direction = ">")
+roc_test_predictions <- roc(testing$progression, test_predictions, direction = ">")
+roc_test_logit_tkvt <- roc(testing$progression, test_logit_tkvt, direction = ">")
+roc_test_logit_both <- roc(testing$progression, test_logit_both, direction = ">")
+roc_test_las_logit_imaging <- roc(testing$progression, test_las_logit_imaging, direction = ">")
+roc_test_las_logit_both_pred <- roc(testing$progression, test_las_logit_both_pred, direction = ">")
+roc_test_ridge_imaging_pred <- roc(testing$progression, test_ridge_imaging_pred, direction = ">")
+roc_test_ridge_logit_both_pred <- roc(testing$progression, test_ridge_logit_both_pred, direction = ">")
+
+
+# List of all ROC objects
+roc_list <- list(
+  "tkv_log_pred" = roc_test_tkv_log_pred,
+  "test_predictions" = roc_test_predictions,
+  "logit_tkvt" = roc_test_logit_tkvt,
+  "logit_both" = roc_test_logit_both,
+  "las_logit_imaging" = roc_test_las_logit_imaging,
+  "las_logit_both_pred" = roc_test_las_logit_both_pred,
+  "ridge_imaging_pred" = roc_test_ridge_imaging_pred,
+  "ridge_logit_both_pred" = roc_test_ridge_logit_both_pred
+)
+
+# Pairwise comparisons with DeLong test
+results <- list()
+roc_names <- names(roc_list)
+for (i in 1:(length(roc_list) - 1)) {
+  for (j in (i + 1):length(roc_list)) {
+    test_result <- roc.test(roc_list[[i]], roc_list[[j]], method = "delong")
+    results[[paste(roc_names[i], "vs", roc_names[j])]] <- test_result
+  }
+}
+
+#results
+for (comparison in names(results)) {
+  cat("Comparison:", comparison, "\n")
+  print(results[[comparison]])
+  cat("\n")
+}
+
+```
+
+
+
+
