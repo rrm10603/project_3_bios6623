@@ -399,7 +399,7 @@ results <- data.frame(
 )
 
 
-kable(results, caption = "Model Comparison: AIC, MSE, and RMSE", digits = 4)
+kable(results, caption = "Table 2: Model Comparison: AIC, MSE, and RMSE (Training Data)", digits = 4)
 
 
 ```
@@ -455,21 +455,21 @@ rmse_tkv_lm_test <- sqrt(mse_tkv_lm_test)
 
 # Create a data frame for the final evaluation metrics
 final_metrics <- data.frame(
-  Model = c("Ridge (Both)", "Ridge (Image)", "Lasso (Both)", "Lasso (Image)", 
+  Model = c("Ridge (Both)", "Ridge (Image)",  
             "Linear (Both)", "Linear (Image)", "Linear (TKV)"),
   MSE = c(round(mse_ridge_both_test, 4), round(mse_ridge_image_test, 4), 
-          round(mse_lasso_both_test, 4), round(mse_lasso_image_test, 4), 
+          #round(mse_lasso_both_test, 4), round(mse_lasso_image_test, 4), 
           round(mse_both_lm_test, 4), round(mse_lm_image_test, 4), 
           round(mse_tkv_lm_test, 4)),
   RMSE = c(round(rmse_ridge_both_test, 4), round(rmse_ridge_image_test, 4), 
-           round(rmse_lasso_both_test, 4), round(rmse_lasso_image_test, 4), 
+           #round(rmse_lasso_both_test, 4), round(rmse_lasso_image_test, 4), 
            round(rmse_both_lm_test, 4), round(rmse_lm_image_test, 4), 
            round(rmse_tkv_lm_test, 4))
 )
 
 # Output the results in a table
-library(knitr)
-kable(final_metrics, caption = "Model Evaluation Metrics (MSE and RMSE)", digits = 4)
+
+kable(final_metrics, caption = "Table 3: Testing Data Model Evaluation Metrics (MSE and RMSE)", digits = 4)
 ```
 
 
@@ -610,7 +610,7 @@ auc_results <- data.frame(
           auc_lasso_imaging, auc_ridge_imaging, auc_lasso_both, auc_ridge_both))
 
 # Display the AUC comparison table
-kable(auc_results, caption = "Table 4: Model Comparison: AUC and ROC", digits = 4)
+kable(auc_results, caption = "Table 4: Model Comparison: AUC and ROC(Training Data)", digits = 4)
 
 
 
@@ -670,7 +670,7 @@ auc_results <- data.frame(
 )
 
 # Display the updated table
-kable(auc_results, caption = "Table 5: Model Comparison: AUC, Accuracy, and F1-Score", digits = 4)
+kable(auc_results, caption = "Table 4: Model Comparison: AUC, Accuracy, and F1-Score (Training Data)", digits = 4)
 
 ```
 
@@ -858,9 +858,8 @@ auc_ridge_both <- auc(roc_ridge_both)
 
 # Create a data frame to store AUC values for each model
 auc_table <- data.frame(
-  Model = c("Logistic (tkvht_base)", 
+  Model = c("Logistic (TVK Base)", 
             "Logistic (Imaging)", 
-            "Logistic (tkvht_base - Logit)", 
             "Logistic (Both Variables)", 
             "Lasso (Imaging)", 
             "Lasso (Both Variables)", 
@@ -868,7 +867,6 @@ auc_table <- data.frame(
             "Ridge (Both Variables)"),
   AUC = c(auc_tkvht_base, 
           auc_imaging, 
-          auc_tkvht_logit, 
           auc_both_logit, 
           auc_lasso_imaging, 
           auc_lasso_both, 
@@ -879,12 +877,12 @@ auc_table <- data.frame(
 # Print the table
 #print(auc_table)
 
-# Round AUC values to two decimal places
-auc_table$AUC <- round(auc_table$AUC, 2)
+# Round AUC values to 4 decimal places
+auc_table$AUC <- round(auc_table$AUC, 4)
 
 # Create a clean table with kable
 kable(auc_table, 
-      caption = "Table 6: Comparison of AUC Values for All Models (Testing)", 
+      caption = "Table 5: Comparison of AUC Values for All Models (Testing)", 
       col.names = c("Model", "AUC"), 
       format = "pipe")  # For markdown tables
 
