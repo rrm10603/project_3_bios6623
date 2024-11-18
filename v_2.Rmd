@@ -581,15 +581,15 @@ lasso_logit_both_pred <- predict(lasso_logit, s = 0.1, newx = X_lasso, type = "r
 ridge_logit_both_pred <- predict(ridge_logit, s = 0.1, newx = X_lasso, type = "response")
 
 # Calculate ROC for each model
-roc_tkvht_base <- roc(training$progression, logit_tkvht_base_pred)
-roc_imaging <- roc(training$progression, logit_imaging_pred)
-roc_both <- roc(training$progression, logit_both_pred)
+roc_tkvht_base <- roc(training$progression, logit_tkvht_base_pred, direction = "<")
+roc_imaging <- roc(training$progression, logit_imaging_pred, direction = "<")
+roc_both <- roc(training$progression, logit_both_pred, direction = "<")
 
-roc_lasso_imaging <- roc(training$progression, lasso_logit_imaging_pred)
-roc_ridge_imaging <- roc(training$progression, ridge_logit_imaging_pred)
+roc_lasso_imaging <- roc(training$progression, lasso_logit_imaging_pred, direction = "<")
+roc_ridge_imaging <- roc(training$progression, ridge_logit_imaging_pred, direction = "<")
 
-roc_lasso_both <- roc(training$progression, lasso_logit_both_pred)
-roc_ridge_both <- roc(training$progression, ridge_logit_both_pred)
+roc_lasso_both <- roc(training$progression, lasso_logit_both_pred, direction = "<")
+roc_ridge_both <- roc(training$progression, ridge_logit_both_pred, direction = "<")
 
 # Calculate AUC for each model
 auc_tkvht_base <- auc(roc_tkvht_base)
