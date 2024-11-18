@@ -455,13 +455,13 @@ rmse_tkv_lm_test <- sqrt(mse_tkv_lm_test)
 
 # Create a data frame for the final evaluation metrics
 final_metrics <- data.frame(
-  Model = c("Ridge (Both)", "Ridge (Image)",  
+  Model = c("Lasso (Both)", "Lasso (Image)", "Ridge (Both)", "Ridge (Image)",  
             "Linear (Both)", "Linear (Image)", "Linear (TKV)"),
-  MSE = c(round(mse_ridge_both_test, 4), round(mse_ridge_image_test, 4), 
+  MSE = c(round(mse_lasso_both_test, 4), round(mse_lasso_image_test, 4), round(mse_ridge_both_test, 4), round(mse_ridge_image_test, 4), 
           #round(mse_lasso_both_test, 4), round(mse_lasso_image_test, 4), 
           round(mse_both_lm_test, 4), round(mse_lm_image_test, 4), 
           round(mse_tkv_lm_test, 4)),
-  RMSE = c(round(rmse_ridge_both_test, 4), round(rmse_ridge_image_test, 4), 
+  RMSE = c(round(rmse_lasso_both_test, 4), round(rmse_lasso_image_test, 4), round(rmse_ridge_both_test, 4), round(rmse_ridge_image_test, 4), 
            #round(rmse_lasso_both_test, 4), round(rmse_lasso_image_test, 4), 
            round(rmse_both_lm_test, 4), round(rmse_lm_image_test, 4), 
            round(rmse_tkv_lm_test, 4))
@@ -825,35 +825,35 @@ print(performance_summary)
 ```{r,echo=FALSE}
 
 # 1. Logistic regression model with tkvht_base (Base) prediction
-roc_tkvht_base <- roc(testing$progression, test_tkv_log_pred)
+roc_tkvht_base <- roc(testing$progression, test_tkv_log_pred, direction ="<")
 auc_tkvht_base <- auc(roc_tkvht_base)
 
 # 2. Logistic regression model with imaging (imaging model)
-roc_imaging <- roc(testing$progression, test_predictions)
+roc_imaging <- roc(testing$progression, test_predictions, direction ="<")
 auc_imaging <- auc(roc_imaging)
 
 # 3. Logistic regression model with tkvht_base (Base) for test_logit_tkvt
-roc_tkvht_logit <- roc(testing$progression, test_logit_tkvt)
+roc_tkvht_logit <- roc(testing$progression, test_logit_tkvt, direction ="<")
 auc_tkvht_logit <- auc(roc_tkvht_logit)
 
 # 4. Logistic regression model with both variables (both model)
-roc_both_logit <- roc(testing$progression, test_logit_both)
+roc_both_logit <- roc(testing$progression, test_logit_both, direction ="<")
 auc_both_logit <- auc(roc_both_logit)
 
 # 5. Lasso regression model on imaging data (Lasso regularization on X_lasso_ti)
-roc_lasso_imaging <- roc(testing$progression, test_las_logit_imaging)
+roc_lasso_imaging <- roc(testing$progression, test_las_logit_imaging, direction ="<")
 auc_lasso_imaging <- auc(roc_lasso_imaging)
 
 # 6. Lasso regression model on both data (Lasso regularization on X_lasso)
-roc_lasso_both <- roc(testing$progression, test_las_logit_both_pred)
+roc_lasso_both <- roc(testing$progression, test_las_logit_both_pred, direction ="<")
 auc_lasso_both <- auc(roc_lasso_both)
 
 # 7. Ridge regression model on imaging data (Ridge regularization on X_lasso_ti)
-roc_ridge_imaging <- roc(testing$progression, test_ridge_imaging_pred)
+roc_ridge_imaging <- roc(testing$progression, test_ridge_imaging_pred, direction ="<")
 auc_ridge_imaging <- auc(roc_ridge_imaging)
 
 # 8. Ridge regression model on both data (Ridge regularization on X_lasso)
-roc_ridge_both <- roc(testing$progression, test_ridge_logit_both_pred)
+roc_ridge_both <- roc(testing$progression, test_ridge_logit_both_pred, direction ="<")
 auc_ridge_both <- auc(roc_ridge_both)
 
 # Create a data frame to store AUC values for each model
@@ -889,38 +889,43 @@ kable(auc_table,
 ```
 
 DeLong's test to test for significant differences in AUC 
-```{r}
-# Turn all predictions numberic
-test_tkv_log_pred <- as.numeric(predict(tkvht_base_glm, newdata = testing, type ="response"))
-test_predictions <- as.numeric(predict(model_imaging_log, newdata = testing, type = "response"))
-test_logit_tkvt <-as.numeric(predict(tkvht_base_glm,newdata=testing, type = "response"))
-test_logit_both <-as.numeric(predict(model_both_log,newdata = testing,type ="response"))
-test_las_logit_imaging <- as.numeric(predict(lasso_logit_i, newx = X_lasso_ti, s = 0.1, type = "response"))
-test_las_logit_both_pred <-as.numeric(predict(lasso_logit, newx = X_lasso, s = 0.1, type = "response"))
-test_ridge_imaging_pred <- as.numeric(predict(ridge_logit_i, newx = X_lasso_ti, s = 0.1, type = "response"))
-test_ridge_logit_both_pred <-as.numeric(predict(ridge_logit, newx = X_lasso, s = 0.1, type = "response"))
 
-#Get ROC's with direction specified
-roc_test_tkv_log_pred <- roc(testing$progression, test_tkv_log_pred, direction = ">")
-roc_test_predictions <- roc(testing$progression, test_predictions, direction = ">")
-roc_test_logit_tkvt <- roc(testing$progression, test_logit_tkvt, direction = ">")
-roc_test_logit_both <- roc(testing$progression, test_logit_both, direction = ">")
-roc_test_las_logit_imaging <- roc(testing$progression, test_las_logit_imaging, direction = ">")
-roc_test_las_logit_both_pred <- roc(testing$progression, test_las_logit_both_pred, direction = ">")
-roc_test_ridge_imaging_pred <- roc(testing$progression, test_ridge_imaging_pred, direction = ">")
-roc_test_ridge_logit_both_pred <- roc(testing$progression, test_ridge_logit_both_pred, direction = ">")
+```{r}
+
+# 1. Logistic regression model with tkvht_base (Base) prediction
+roc_tkvht_base <- roc(testing$progression, test_tkv_log_pred, direction = "<")
+
+# 2. Logistic regression model with imaging (imaging model)
+roc_imaging <- roc(testing$progression, test_predictions, direction = "<")
+
+# 3. Logistic regression model with tkvht_base (Base) for test_logit_tkvt
+roc_tkvht_logit <- roc(testing$progression, test_logit_tkvt, direction = "<")
+
+# 4. Logistic regression model with both variables (both model)
+roc_both_logit <- roc(testing$progression, test_logit_both, direction = "<")
+
+# 5. Lasso regression model on imaging data (Lasso regularization on X_lasso_ti)
+roc_lasso_imaging <- roc(testing$progression, test_las_logit_imaging, direction = "<")
+
+# 6. Lasso regression model on both data (Lasso regularization on X_lasso)
+roc_lasso_both <- roc(testing$progression, test_las_logit_both_pred, direction = "<")
+
+# 7. Ridge regression model on imaging data (Ridge regularization on X_lasso_ti)
+roc_ridge_imaging <- roc(testing$progression, test_ridge_imaging_pred, direction = "<")
+
+# 8. Ridge regression model on both data (Ridge regularization on X_lasso)
+roc_ridge_both <- roc(testing$progression, test_ridge_logit_both_pred, direction = "<")
 
 
 # List of all ROC objects
 roc_list <- list(
-  "tkv_log_pred" = roc_test_tkv_log_pred,
-  "test_predictions" = roc_test_predictions,
-  "logit_tkvt" = roc_test_logit_tkvt,
-  "logit_both" = roc_test_logit_both,
-  "las_logit_imaging" = roc_test_las_logit_imaging,
-  "las_logit_both_pred" = roc_test_las_logit_both_pred,
-  "ridge_imaging_pred" = roc_test_ridge_imaging_pred,
-  "ridge_logit_both_pred" = roc_test_ridge_logit_both_pred
+  "Logistic Regression TKHVT" = roc_tkvht_base,
+  "Logistic Regression MRI" = roc_imaging,
+  "logistic Regression Both" = roc_both_logit,
+  "lasso MRI" = roc_lasso_imaging,
+  "lasso Both" = roc_lasso_both,
+  "ridge MRI" = roc_ridge_imaging,
+  "ridge Both" = roc_ridge_both
 )
 
 # Pairwise comparisons with DeLong test
@@ -939,7 +944,6 @@ for (comparison in names(results)) {
   print(results[[comparison]])
   cat("\n")
 }
-
 ```
 
 
