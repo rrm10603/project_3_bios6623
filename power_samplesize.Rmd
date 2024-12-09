@@ -1,0 +1,77 @@
+---
+title: "Statistical Power and Sample Size"
+author: "Rob McNeil and Jessica Chaffee"
+date: "2024-12-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,warning=FALSE}
+
+library(pwr)
+library(Superpower)
+
+
+```
+
+
+MLR for hypothesis 1: 
+```{r}
+
+
+#U: umber of coefficients (minus intercept) 
+#V:  n-u-1
+#n=v+u+1
+#=73+3+1 = 77
+
+result_mlr <- pwr.f2.test(f2=0.15,
+                          u=3,sig.level = 0.05,
+                          power=0.80)
+result_mlr
+```
+
+
+Hypothesis 2
+
+```{r}
+
+#between subjects MANOVA design
+#design <- ANOVA_design(
+  #design = "2b",  # 2-level between-subjects design (Exposed vs Unexposed for IUGR)
+ # n = NA,  # Sample size is to be calculated
+  #mu = c(3.7, 8.3 ),  # Mean differences for BMI (4.6 kg/m²) and HOMA-IR (0.89 units)
+ # sd = c(24.2, 2.3 ),  # Standard deviations for BMI (4.8 kg/m²) and HOMA-IR (2.3 units)
+ # r = 0.5,  # Assuming moderate correlation (adjust if needed)
+  #labelnames = c("IUGR Exposure", "Visceral Fat", "HOMA-IR")  # Labels for the factors and outcomes
+#)
+
+
+
+#power_manova<- ANOVA_power(design,nsims=1000)
+
+
+#cant get code to run: going with MLR setup
+
+#model for reference 
+#HOMA <- lm(HOMA ~ IUGR + age +race +BMI)
+#power calc
+
+mlr_HOMA <- pwr.f2.test(f2=0.15,
+                        u=4,
+                        power=0.80)
+mlr_HOMA
+
+#model for reference
+#visceral_fat <- lm(visceral_fat ~ IUGR +age +race +BMI)
+
+#power calc
+
+power_vf <- pwr.f2.test(f2=0.15,
+                        u=4,
+                        power=0.80)
+power_vf
+
+```
