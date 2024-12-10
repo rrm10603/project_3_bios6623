@@ -42,10 +42,10 @@ Hypothesis 2
 #design <- ANOVA_design(
   #design = "2b",  # 2-level between-subjects design (Exposed vs Unexposed for IUGR)
  # n = NA,  # Sample size is to be calculated
-  #mu = c(3.7, 8.3 ),  # Mean differences for BMI (4.6 kg/m²) and HOMA-IR (0.89 units)
+ # mu = c(3.7, 8.3 ),  # Mean differences for BMI (4.6 kg/m²) and HOMA-IR (0.89 units)
  # sd = c(24.2, 2.3 ),  # Standard deviations for BMI (4.8 kg/m²) and HOMA-IR (2.3 units)
  # r = 0.5,  # Assuming moderate correlation (adjust if needed)
-  #labelnames = c("IUGR Exposure", "Visceral Fat", "HOMA-IR")  # Labels for the factors and outcomes
+ # Tabelnames = c("IUGR Exposure", "Visceral Fat", "HOMA-IR")  # Labels for the factors and outcomes
 #)
 
 
@@ -73,5 +73,24 @@ power_vf <- pwr.f2.test(f2=0.15,
                         u=4,
                         power=0.80)
 power_vf
+
+```
+Hypothesis 3: differences in leptin concentrations between newborns exposed to diabetes in utero and those not exposed
+
+```{r}
+
+
+power_cbl <- pwr.f2.test(f2=0.15,
+                           u=2,
+                           power=0.80)
+
+power_cbl
+
+#U: umber of coefficients (minus intercept) 
+#V:  n-u-1
+#n=v+u+1
+#=73+3+1 = 77
+
+# 64+2+1 = 67
 
 ```
